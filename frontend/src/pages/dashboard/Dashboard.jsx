@@ -3,42 +3,75 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-const followerData = [
-    { name: "Mon", followers: 4000 },
-    { name: "Tue", followers: 4500 },
-    { name: "Wed", followers: 4200 },
-    { name: "Thu", followers: 4800 },
-    { name: "Fri", followers: 5200 },
-    { name: "Sat", followers: 5800 },
-    { name: "Sun", followers: 6000 },
-];
-
-const stats = [
-    {
-        title: "Total Followers",
-        value: "12,345",
-        change: "+12%",
-        icon: Users,
-        color: "text-blue-500",
-    },
-    {
-        title: "Total Reach",
-        value: "45.2k",
-        change: "+8%",
-        icon: Eye,
-        color: "text-green-500",
-    },
-    {
-        title: "Engagement Rate",
-        value: "4.8%",
-        change: "+2.1%",
-        icon: MessageCircle,
-        color: "text-purple-500",
-    },
-];
+import { useEffect } from "react";
+import axios from "axios";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 
 export default function Dashboard() {
+
+    const token = useSelector((state) => state.auth.token)
+    console.log(token)
+    const id = 1;
+    const followerData = [
+        { name: "Mon", followers: 4000 },
+        { name: "Tue", followers: 4500 },
+        { name: "Wed", followers: 4200 },
+        { name: "Thu", followers: 4800 },
+        { name: "Fri", followers: 5200 },
+        { name: "Sat", followers: 5800 },
+        { name: "Sun", followers: 6000 },
+    ];
+
+    const stats = [
+        {
+            title: "Total Followers",
+            value: "12,345",
+            change: "+12%",
+            icon: Users,
+            color: "text-blue-500",
+        },
+        {
+            title: "Total Reach",
+            value: "45.2k",
+            change: "+8%",
+            icon: Eye,
+            color: "text-green-500",
+        },
+        {
+            title: "Engagement Rate",
+            value: "4.8%",
+            change: "+2.1%",
+            icon: MessageCircle,
+            color: "text-purple-500",
+        },
+    ];
+
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+
+    useEffect(() => {
+        setLoading(true);
+        axios.get(`/api/account/business-accounts/${id}/`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        }).then(function (res) {
+            console.log(res)
+        }).catch((err) => {
+            console.log(err);
+            setError(err);
+        })
+        return () => {
+            setLoading(false)
+        }
+
+    }, [])
+
+
+
+
     return (
         <div className="space-y-8">
             {/* Header */}

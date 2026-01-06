@@ -9,27 +9,28 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import axios from "axios";
+
 
 export default function AICreator() {
+
+
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImages, setGeneratedImages] = useState([]);
     const [caption, setCaption] = useState("");
     const [date, setDate] = useState();
+    const [error, setError] = useState();
 
     const handleGenerate = () => {
         setIsGenerating(true);
         // Simulate API call
-        setTimeout(() => {
-            setGeneratedImages([
-                "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2670&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=2576&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1617791160505-6f00504e3519?q=80&w=2600&auto=format&fit=crop"
-            ]);
-            setCaption("✨ Experience the magic of AI-driven creativity! Transform your ideas into stunning visuals with just a few clicks. #AIArt #Innovation #DigitalDesign #FutureTech 🇳🇵");
-            setIsGenerating(false);
-        }, 2000);
+        axios.post('/api/dashboard/generate_image/', { prompt }).then((res) => {
+            console.log(res)
+        }).catch((err) => {
+            console.log(err)
+            setError(err)
+        })
     };
 
     const handlePostNow = () => {
