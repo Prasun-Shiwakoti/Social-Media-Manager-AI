@@ -34,7 +34,7 @@ export default function Signup() {
                 })
             )
 
-            navigate("/dashboard");
+            navigate("/business-setup");
         }).catch(function (err) {
             console.log(err);
             setIsLoading(false);

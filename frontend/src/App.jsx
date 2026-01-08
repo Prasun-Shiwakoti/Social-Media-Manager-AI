@@ -9,6 +9,7 @@ import Insights from "@/pages/features/Insights";
 import Settings from "@/pages/features/Settings";
 import Login from "@/pages/auth/Login";
 import Signup from "@/pages/auth/Signup";
+import BusinessSetup from "@/pages/auth/BusinessSetup";
 
 import LandingPage from "@/pages/LandingPage";
 import Scheduler from "@/pages/features/Scheduler";
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/business-setup" element={<BusinessSetup />} />
 
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
