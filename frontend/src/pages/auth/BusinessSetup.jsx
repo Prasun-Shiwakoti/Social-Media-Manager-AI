@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,40 +7,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import axios from 'axios';
+import { useDispatch, useSelector } from "react-redux";
+import { loginSuccess } from "@/redux/authSlice";
 
 export default function BusinessSetup() {
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState({ auto_reply_enabled: false });
     const navigate = useNavigate();
+    const access_token = useSelector((state) => state.auth.token)
+    const user = useSelector((state) => state.auth.userId)
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        user ? navigate('/dashboard') : null;
+    }, [user])
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Placeholder for API call
-        console.log("Submitting Business Data:", formData);
-
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            // navigate("/dashboard"); // or wherever the user should go next
-        }, 1000);
-
-        /* 
         // Example axios call
-        axios.post('/api/business/setup/', { ...formData }).then(function (res) {
+        axios.post('/api/account/business-accounts/', { ...formData }, {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            }
+        }).then(function (res) {
             console.log(res.data);
             setIsLoading(false);
+            dispatch(
+                loginSuccess({
+                    userId: res.data.id,
+                    token: access_token
+                }))
             navigate("/dashboard");
         }).catch(function (err) {
             console.log(err);
             setIsLoading(false);
         });
-        */
+
     };
 
     const handleFormChange = (e) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
+        // console.log(e.target.checked)
+        setFormData({ ...formData, [e.target.id]: e.target.type == "checkbox" ? e.target.checked : e.target.value });
+
     }
 
     return (
@@ -56,18 +66,22 @@ export default function BusinessSetup() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="businessName">Business Name</Label>
-                            <Input id="businessName" placeholder="My Awesome Business" required onChange={handleFormChange} />
+                            <Input id="name" placeholder="My Awesome Business" required onChange={handleFormChange} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" placeholder="Describe your business..." required onChange={handleFormChange} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="metaAccessToken">Meta Access Token</Label>
-                            <Input id="metaAccessToken" type="password" placeholder="EAA..." required onChange={handleFormChange} />
+                            <Label htmlFor="access_token">Meta Access Token</Label>
+                            <Input id="access_token" type="password" placeholder="EAA..." required onChange={handleFormChange} />
                             <p className="text-xs text-muted-foreground">
                                 Your Meta Graph API access token.
                             </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="metaAccessToken">Auto Reply</Label>
+                            <Input id="auto_reply_enabled" type="checkbox" placeholder="EAA..." required onChange={handleFormChange} className="h-3 w-3 rounded-sm" />
                         </div>
                         <Button className="w-full" type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

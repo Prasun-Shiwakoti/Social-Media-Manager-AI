@@ -10,6 +10,8 @@ import {
     LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDispatch } from "react-redux";
+import { logout } from "@/redux/authSlice";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -23,9 +25,10 @@ const sidebarItems = [
 export function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const dispatch = useDispatch();
 
     const handleLogout = () => {
-        // In a real app, you would clear auth state here
+        dispatch(logout({}))
         navigate("/login");
     };
 

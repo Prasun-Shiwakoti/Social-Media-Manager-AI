@@ -11,7 +11,8 @@ import { useSelector } from "react-redux";
 export default function Dashboard() {
 
     const token = useSelector((state) => state.auth.token)
-    console.log(token)
+    const userId = useSelector((state) => state.auth.userId)
+    console.log(token, userId)
     const id = 1;
     const followerData = [
         { name: "Mon", followers: 4000 },
@@ -53,7 +54,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         setLoading(true);
-        axios.get(`/api/account/business-accounts/${id}/`, {
+        axios.get(`/api/account/business-accounts/${userId}/`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             }
@@ -66,7 +67,6 @@ export default function Dashboard() {
         return () => {
             setLoading(false)
         }
-
     }, [])
 
 
