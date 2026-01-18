@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Wand2, Image as ImageIcon, Copy, RefreshCw, Download, Send, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import axios from "axios";
 export default function AICreator() {
 
 
+    const token = useSelector((state) => state.auth.token);
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImages, setGeneratedImages] = useState([]);
@@ -22,15 +24,38 @@ export default function AICreator() {
     const [date, setDate] = useState();
     const [error, setError] = useState();
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         setIsGenerating(true);
-        // Simulate API call
-        axios.post('/api/dashboard/generate_image/', { prompt }).then((res) => {
-            console.log(res)
-        }).catch((err) => {
-            console.log(err)
-            setError(err)
-        })
+        setError(null);
+        try {
+            const res = await axios.post('/api/dashboard/generate_post/', { prompt }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // API returns image_url, wrap in array for existing UI logic
+            setGeneratedImages([res.data.image_url]);
+            setCaption(res.data.caption);
+            console.log(res.data.image_url)
+        } catch (err) {
+            console.error(err);
+            setError("Failed to generate content");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleGenerateCaption = async (language) => {
+        if (!prompt) return;
+        try {
+            const res = await axios.post('/api/dashboard/generate_caption/', {
+                short_prompt: prompt,
+                expanded_prompt: `Generate a caption in ${language} for: ${prompt}`
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCaption(res.data.caption);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const handlePostNow = () => {
@@ -109,8 +134,8 @@ export default function AICreator() {
                                 />
                             </div>
                             <div className="flex gap-2">
-                                <Button variant="outline" className="flex-1">English</Button>
-                                <Button variant="outline" className="flex-1">Nepali</Button>
+                                <Button variant="outline" className="flex-1" onClick={() => handleGenerateCaption("English")}>English</Button>
+                                <Button variant="outline" className="flex-1" onClick={() => handleGenerateCaption("Nepali")}>Nepali</Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -123,14 +148,14 @@ export default function AICreator() {
                             <CardTitle>Results</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            {generatedImages.length > 0 ? (
+                            {generatedImages ? (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
-                                        {generatedImages.map((img, i) => (
-                                            <div key={i} className="group relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                                        {
+                                            <div className="group relative aspect-square rounded-lg overflow-hidden border bg-muted">
                                                 <img
-                                                    src={img}
-                                                    alt={`Generated ${i}`}
+                                                    src={`http://localhost:8000${generatedImages}`}
+                                                    alt={`Generated`}
                                                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -142,7 +167,7 @@ export default function AICreator() {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        ))}
+                                        }
                                     </div>
 
                                     <div className="flex flex-col gap-3 pt-4 border-t">

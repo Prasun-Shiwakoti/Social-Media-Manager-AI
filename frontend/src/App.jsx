@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import AICreator from "@/pages/features/AICreator";
 import Analytics from "@/pages/features/Analytics";
@@ -23,15 +24,17 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/business-setup" element={<BusinessSetup />} />
 
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/create" element={<AICreator />} />
-          <Route path="/schedule" element={<Scheduler />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/comments" element={<Comments />} />
-          <Route path="/dms" element={<DMAssistant />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/settings" element={<Settings />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/create" element={<AICreator />} />
+            <Route path="/schedule" element={<Scheduler />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/comments" element={<Comments />} />
+            <Route path="/dms" element={<DMAssistant />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

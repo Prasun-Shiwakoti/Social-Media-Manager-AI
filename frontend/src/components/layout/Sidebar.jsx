@@ -28,7 +28,8 @@ export function Sidebar() {
     const dispatch = useDispatch();
 
     const handleLogout = () => {
-        dispatch(logout({}))
+        dispatch(logout({}));
+        localStorage.clear();
         navigate("/login");
     };
 

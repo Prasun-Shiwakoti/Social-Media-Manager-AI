@@ -5,21 +5,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../redux/authSlice";
 
 export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const [formData, setFormData] = useState({});
 
     const handleLogin = (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate login
-        setTimeout(() => {
+        axios.post("/api/account/token", { ...formData }).then(function (res) {
+            console.log(res.data.refresh_token);
+            setIsLoading(true);
+            //Save refresh token
+            localStorage.setItem("refresh_token", res.data.refresh_token);
+            //Set User
+            dispatch(
+                loginSuccess({
+                    token: res.data.access_token,
+                })
+            )
+            navigate("/business-setup");
+        }).catch(function (err) {
+            console.log(err);
             setIsLoading(false);
-            navigate("/dashboard");
-        }, 1500);
+        });
+        setIsLoading(false);
+
     };
+
+    const handleFormChange = (e) => {
+        setFormData({ ...formData, [e.target.id]: e.target.value });
+        console.log(formData);
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-muted/50 px-4">
@@ -33,8 +56,8 @@ export default function Login() {
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="m@example.com" required />
+                            <Label htmlFor="email">Username</Label>
+                            <Input id="username" type="text" placeholder="m@example.com" required onChange={handleFormChange} />
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -48,6 +71,7 @@ export default function Login() {
                                     id="password"
                                     type={showPassword ? "text" : "password"}
                                     required
+                                    onChange={handleFormChange}
                                 />
                                 <Button
                                     type="button"
