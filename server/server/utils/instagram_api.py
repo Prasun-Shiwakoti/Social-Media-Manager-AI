@@ -2,6 +2,25 @@ import os
 from .logger import logger
 import requests
 
+
+def fetch_business_account_id(access_token: str):
+    url = 'https://graph.instagram.com/me'
+    params = {
+        'fields': 'id,username',
+        'access_token': access_token
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        account_id = data.get('id')
+        return account_id
+    else:
+        logger.error(f'Error fetching account ID: {response.status_code} - {response.text}')
+        return None
+
+
 def generate_creation_object(image_url: str, caption: str, access_token: str, business_account_id: str):
     url = f'https://graph.instagram.com/v23.0/{business_account_id}/media'
     payload = {
@@ -163,30 +182,38 @@ def fetch_post_insights(media_id: str, access_token: str, api_version: str = "v2
 
     params = {
         'metric': ','.join([
-            # core metrics
             'reach',
-            'impressions',
-            'engagement',
-            'saved',
-
-            # video-specific (for video posts/reels, may be unsupported after 2025)
-            'video_views',
-
-            # story-specific / other — may produce data only if media is story
+            'follower_count',
+            'website_clicks',
+            'profile_views',
+            'online_followers',
+            'accounts_engaged',
+            'total_interactions',
+            'likes',
+            'comments',
+            'shares',
+            'saves',
             'replies',
-            'exits',
-            'taps_forward',
-            'taps_back',
-
-            # album/carousel
-            'carousel_album_impressions',
-            'carousel_album_reach',
-            'carousel_album_engagement',
-            'carousel_album_saved',
-        ]),
-        'access_token': access_token
-    }
-
+            'engaged_audience_demographics',
+            'reached_audience_demographics',
+            'follower_demographics',
+            'follows_and_unfollows',
+            'profile_links_taps',
+            'views',
+            'threads_likes',
+            'threads_replies',
+            'reposts',
+            'quotes',
+            'threads_followers',
+            'threads_follower_demographics',
+            'content_views',
+            'threads_views',
+            'threads_clicks',
+            'threads_reposts',
+    ]),
+    'access_token': access_token
+}
+    
     response = requests.get(url, params=params)
 
     if response.status_code == 200:
@@ -205,26 +232,34 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
 
     params_account = {
         'metric': ','.join([
-            # core account metrics
             'reach',
-            'impressions',
-            'profile_views',      
+            'follower_count',
+            'website_clicks',
+            'profile_views',
+            'online_followers',
             'accounts_engaged',
-            'follower_count',      
-            'followers',       
-               
-            # engagement aggregates (content-wise)
+            'total_interactions',
             'likes',
             'comments',
-            'saved',
             'shares',
-
-            # profile action metrics — may be removed/deprecated
-            'website_clicks',
-            'email_contacts',   
-            'get_directions_clicks',
-            'phone_call_clicks',
-            'text_message_clicks',
+            'saves',
+            'replies',
+            'engaged_audience_demographics',
+            'reached_audience_demographics',
+            'follower_demographics',
+            'follows_and_unfollows',
+            'profile_links_taps',
+            'views',
+            'threads_likes',
+            'threads_replies',
+            'reposts',
+            'quotes',
+            'threads_followers',
+            'threads_follower_demographics',
+            'content_views',
+            'threads_views',
+            'threads_clicks',
+            'threads_reposts',
         ]),
 
         'period': duration,  
@@ -232,6 +267,8 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
     }
 
     resp_account = requests.get(base_url, params=params_account)
+
+    print(resp_account.text)
     if resp_account.status_code != 200:
         logger.error(f'Error fetching account insights: {resp_account.status_code} - {resp_account.text}')
         account_metrics = None
@@ -247,10 +284,12 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
             'engaged_audience_demographics',
         ]),
         'metric_type': 'total_value',
-        'access_token': access_token
+        'access_token': access_token,
+        'period': duration
     }
 
     resp_demo = requests.get(base_url, params=params_demo)
+    print(resp_demo.text)
     if resp_demo.status_code != 200:
         demographics = None
         logger.warning(f'Could not fetch demographics: {resp_demo.status_code} - {resp_demo.text}')

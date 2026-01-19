@@ -15,7 +15,6 @@ HF_KEY = os.getenv("HF_API_KEY")
 
 # Initialize inference client (used for all API calls)
 inference_client = InferenceClient(
-    provider="nebius",
     api_key=HF_KEY
 )
 
@@ -41,6 +40,8 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
         messages[-1]["content"] += f"\nHowever dont make it somewhat like this : {expanded_prompt}. \nI need a better version of this."
 
 
+    
+
     response = inference_client.chat.completions.create(
         model="meta-llama/Llama-3.3-70B-Instruct",
         messages=messages,
@@ -56,10 +57,15 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
 # 3. Generate image from expanded prompt
 # -------------------------------------------------------------------
 def generate_image(expanded_prompt: str) -> Image.Image:
-    img = inference_client.text_to_image(
+
+    client = InferenceClient(
+        provider="together",
+        api_key=HF_KEY,
+    )
+
+    img = client.text_to_image(
         prompt=expanded_prompt,
         model="black-forest-labs/FLUX.1-dev",
-        guidance_scale=5.0,
         num_inference_steps=30
     )
     return img

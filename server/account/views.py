@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from account.models import IGBusinessAccount, CustomUser, IGAccessToken
 from account.serializer import IGBusinessAccountSerializer
 from server.utils.logger import logger
-from server.utils.instagram_api import fetch_long_lived_token
+from server.utils.instagram_api import fetch_long_lived_token, fetch_business_account_id
 
 
 @api_view(['POST'])
@@ -26,6 +26,7 @@ def register(request):
         password = data.get('password')
         f_name = data.get('first_name')
         l_name = data.get('last_name')
+        
 
         user = User.objects.create_user(username=username, email=email, password=password)
         custom_user = CustomUser.objects.create(user=user, f_name=f_name, l_name=l_name)
@@ -108,6 +109,18 @@ class IGBusinessAccountViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Standard DRF create using the serializer's custom logic."""
         try:
+            if 'business_account_id' not in request.data:
+                print("Fetching business account id...")
+                access_token = request.data.get('access_token')
+                business_account_id = fetch_business_account_id(access_token)
+                print(f"Fetched business account id: {business_account_id}")
+                if not business_account_id:
+                    return Response(
+                        {"error": "Unable to fetch Business Account ID with provided access token."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                request.data['business_account_id'] = business_account_id
+
             return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.error(f"Error while creating IG Business Account: {str(e)}")

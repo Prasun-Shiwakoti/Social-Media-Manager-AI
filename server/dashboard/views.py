@@ -17,12 +17,15 @@ from django.core.files.base import ContentFile
 def generate_post_assets(user_short_prompt: str):
     print("Expanding prompt...")
     expanded_prompt = expand_prompt(user_short_prompt)
-    
+    print("Expanded Prompt:", expanded_prompt)
+
     print("\nGenerating image...")
     image = generate_image_ai(expanded_prompt)
+    print("Image generated.")
 
     print("\nGenerating caption...")
     caption = generate_caption_ai(expanded_prompt)
+    print("Caption generated:", caption)
 
     return expanded_prompt, caption, image
 
@@ -191,6 +194,7 @@ def get_all_instagram_posts(request):
     """
     try:
         custom_user = request.user.customuser
+        print(custom_user)
         business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
         business_account_id = business_account.business_account_id
         access_token = business_account.access_token.access_token
