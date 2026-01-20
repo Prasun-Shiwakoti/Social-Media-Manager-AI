@@ -14,6 +14,7 @@ import BusinessSetup from "@/pages/auth/BusinessSetup";
 
 import LandingPage from "@/pages/LandingPage";
 import Scheduler from "@/pages/features/Scheduler";
+import SentimentAnalysis from "./pages/features/SentimentAnalysis";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/schedule" element={<Scheduler />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/comments" element={<Comments />} />
+            <Route path="/sentiment-analysis" element={<SentimentAnalysis />} />
             <Route path="/dms" element={<DMAssistant />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/settings" element={<Settings />} />

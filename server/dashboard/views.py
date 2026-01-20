@@ -8,10 +8,27 @@ from rest_framework.permissions import IsAuthenticated
 from server.utils.logger import logger
 from .models import PostImage, InstagramPost 
 from server.utils.llm_api_calls import expand_prompt, generate_image as generate_image_ai, generate_caption as generate_caption_ai
+from server.utils.sentiment_model import predict_sentiment as analyze_sentiment
 import server.utils.instagram_api as insta_api
+
 
 from io import BytesIO
 from django.core.files.base import ContentFile
+
+
+@api_view(['POST'])
+def get_sentiment_score(request) -> Response:
+    """API to get sentiment score for a given text."""
+    try:
+        text = request.data.get('text', '')
+        if not text:
+            return Response({"error": "Text is required."}, status=400)
+        
+        score = analyze_sentiment(text)
+        return Response({"sentiment_score": score})
+    except Exception as e:
+        logger.error(f"Error analyzing sentiment: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 def generate_post_assets(user_short_prompt: str):
@@ -78,7 +95,7 @@ def generate_image(request) -> Response:
             return Response({"error": "Prompt is required."}, status=400)
         
         expanded_prompt = expand_prompt(short_prompt)
-        image = generate_image(expanded_prompt)
+        image = generate_image_ai(expanded_prompt)
 
         # Save image to PostImage model
         post_image = PostImage.objects.create(image=image)

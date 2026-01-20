@@ -15,7 +15,7 @@ export default function BusinessSetup() {
     const [formData, setFormData] = useState({ auto_reply_enabled: false });
     const navigate = useNavigate();
     const access_token = useSelector((state) => state.auth.token)
-    const user = useSelector((state) => state.auth.userId)
+    const user = useSelector((state) => state.auth.isAuthenticated)
     const dispatch = useDispatch();
 
     useEffect(() => {

@@ -10,7 +10,8 @@ from dashboard.views import (
     get_post_details,
     get_instagram_insights,
     get_instagram_post_insights,
-    get_instagram_post_comments
+    get_instagram_post_comments,
+    get_sentiment_score,
 )
 
 urlpatterns = [
@@ -34,4 +35,7 @@ urlpatterns = [
     
     # Instagram Comments APIs
     path('instagram/post/<str:media_id>/comments/', get_instagram_post_comments, name='get_instagram_post_comments'),
+
+    # Sentiment Analysis API
+    path('sentiment_analysis/', get_sentiment_score, name='get_sentiment_score'),
 ]

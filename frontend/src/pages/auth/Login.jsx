@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../../redux/authSlice";
+import { useSelector } from "react-redux";
+
 
 export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
@@ -15,19 +17,24 @@ export default function Login() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [formData, setFormData] = useState({});
+    const user = useSelector((state) => state.auth.isAuthenticated)
+
+    useEffect(() => {
+            user ? navigate('/dashboard') : null;
+        }, [user])
 
     const handleLogin = (e) => {
         e.preventDefault();
         setIsLoading(true);
-        axios.post("/api/account/token", { ...formData }).then(function (res) {
-            console.log(res.data.refresh_token);
+        axios.post("/api/account/token/", { ...formData }).then(function (res) {
+            console.log(res.data.refresh);
             setIsLoading(true);
             //Save refresh token
-            localStorage.setItem("refresh_token", res.data.refresh_token);
+            localStorage.setItem("refresh_token", res.data.refresh);
             //Set User
             dispatch(
                 loginSuccess({
-                    token: res.data.access_token,
+                    token: res.data.access,
                 })
             )
             navigate("/business-setup");

@@ -7,7 +7,8 @@ import {
     Mail,
     Zap,
     Settings,
-    LogOut
+    LogOut,
+    TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDispatch } from "react-redux";
@@ -18,6 +19,7 @@ const sidebarItems = [
     { icon: PenTool, label: "AI Creator", path: "/create" },
     { icon: BarChart3, label: "Analytics", path: "/analytics" },
     { icon: MessageSquare, label: "Comments", path: "/comments" },
+    { icon: TrendingUp, label: "Sentiment Analysis", path: "/sentiment-analysis" },
     { icon: Mail, label: "DM Assistant", path: "/dms" },
     { icon: Zap, label: "Insights", path: "/insights" },
 ];

@@ -25,10 +25,7 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
     messages = [
         {
             "role": "system",
-            "content": (
-                "Expand short prompts into long, vivid, detailed visual descriptions "
-                "for image generation. No stories, only one paragraph."
-            )
+            "content": "You are an expert prompt expander for AI image generation. Expand short or minimal user prompts into exactly one cohesive, richly detailed paragraph optimized for high-quality image synthesis. Describe only visual elements: subject, environment, lighting, colors, textures, composition, perspective, atmosphere, and artistic style. The image must include relevant, graphically aesthetic text as part of the visual composition. If the user provides text, incorporate it verbatim into the image; if not, generate short, context-appropriate text suitable for visual display. Specify the text's placement, typography style, size, color, and integration with the scene. Do not write stories, narratives, dialogue, explanations, or metadata. Output only the final paragraph, suitable for generating a visually striking Instagram image."
         },
         {
             "role": "user",

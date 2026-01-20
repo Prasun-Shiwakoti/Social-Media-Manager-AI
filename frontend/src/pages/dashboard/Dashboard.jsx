@@ -19,19 +19,19 @@ export default function Dashboard() {
     const [stats, setStats] = useState([
         {
             title: "Total Followers",
-            value: "0",
+            value: 1,
             icon: Users,
             color: "text-blue-500",
         },
         {
             title: "Total Reach",
-            value: "0",
+            value: 20,
             icon: Eye,
             color: "text-green-500",
         },
         {
             title: "Accounts Engaged",
-            value: "0",
+            value: 3,
             icon: MessageCircle,
             color: "text-purple-500",
         },
