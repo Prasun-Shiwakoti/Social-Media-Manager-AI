@@ -15,12 +15,12 @@ export default function BusinessSetup() {
     const [formData, setFormData] = useState({ auto_reply_enabled: false });
     const navigate = useNavigate();
     const access_token = useSelector((state) => state.auth.token)
-    const user = useSelector((state) => state.auth.isAuthenticated)
+    const businessId = useSelector((state) => state.auth.businessId)
     const dispatch = useDispatch();
 
     useEffect(() => {
-        user ? navigate('/dashboard') : null;
-    }, [user])
+        businessId ? navigate('/dashboard') : null;
+    }, [businessId])
 
     const handleSubmit = (e) => {
         e.preventDefault();

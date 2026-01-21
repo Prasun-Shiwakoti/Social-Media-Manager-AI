@@ -20,8 +20,8 @@ export default function Login() {
     const user = useSelector((state) => state.auth.isAuthenticated)
 
     useEffect(() => {
-            user ? navigate('/dashboard') : null;
-        }, [user])
+        user ? navigate('/dashboard') : null;
+    }, [user])
 
     const handleLogin = (e) => {
         e.preventDefault();

@@ -4,6 +4,7 @@ const initialState = {
   token: null,
   isAuthenticated: false,
   userId: null,
+  businessId: null,
 };
 
 const authSlice = createSlice({
@@ -14,6 +15,7 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.userId = action.payload.userId;
+      state.businessId = action.payload.businessId;
     },
     logout: (state) => {
       state.token = null;
