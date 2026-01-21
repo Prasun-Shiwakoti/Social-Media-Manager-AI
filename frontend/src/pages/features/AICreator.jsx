@@ -20,7 +20,7 @@ export default function AICreator() {
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedImages, setGeneratedImages] = useState([]);
-    const [caption, setCaption] = useState("");
+    const [caption, setCaption] = useState("This is a caption");
     const [date, setDate] = useState();
     const [error, setError] = useState();
 
@@ -58,8 +58,31 @@ export default function AICreator() {
         }
     };
 
-    const handlePostNow = () => {
-        alert("Posted successfully!");
+    const handlePostNow = async () => {
+        if (!caption) {
+            alert("Please generate a caption first.");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("caption", caption);
+            formData.append("image_url", "https://media.licdn.com/dms/image/v2/C5603AQGtLGnarX0xag/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1662869334520?e=2147483647&v=beta&t=0T6n29vgNp3rqlfc6SYc-FdHCK9LzDCt90rjReCyg3Q");
+
+            const res = await axios.post("/api/dashboard/publish_post/", formData, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            if (res.status === 200) {
+                alert("Posted successfully!");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to post content.");
+        }
     };
 
     const handleSchedule = () => {
