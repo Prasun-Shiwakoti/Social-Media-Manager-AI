@@ -30,12 +30,16 @@ class InstagramPost(models.Model):
 
 
     def publish_to_instagram(self, request):
-
+        print("Publishing post to Instagram...")
+        print("Media:", self.media)
+        print("Is Posted:", self.is_posted)
         if self.media and not self.is_posted:
             if self.media.image:
                 absolute_url = request.build_absolute_uri(self.media.image.url)
             else:
                 absolute_url = self.media.image_url
+            
+            print("Absolute URL:", absolute_url)
 
             post_link, media_id = create_and_publish_post(
                 image_url=absolute_url,
@@ -43,10 +47,11 @@ class InstagramPost(models.Model):
                 access_token=self.business_account.access_token.access_token,
                 business_account_id=self.business_account.business_account_id,
             )
+
             if post_link:
                 self.is_posted = True
                 self.short_code = post_link.split("/")[-2]
                 self.post_id = media_id
-                self.save()
+                self.save()   
             return post_link, media_id
         return False

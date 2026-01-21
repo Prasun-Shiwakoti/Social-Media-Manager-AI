@@ -12,7 +12,6 @@ import axios from "axios";
 const SENTIMENT_COLORS = {
   Positive: "#10b981",
   Negative: "#ef4444",
-  Neutral: "#6b7280",
 };
 
 const getSentimentIcon = (sentiment) => {
@@ -21,8 +20,6 @@ const getSentimentIcon = (sentiment) => {
       return "😊";
     case "Negative":
       return "😞";
-    case "Neutral":
-      return "😐";
     default:
       return "❓";
   }
@@ -34,8 +31,6 @@ const getSentimentVariant = (sentiment) => {
       return "success";
     case "Negative":
       return "destructive";
-    case "Neutral":
-      return "secondary";
     default:
       return "outline";
   }
@@ -82,7 +77,6 @@ export default function SentimentAnalysis() {
   const chartData = result
     ? [
         { name: "Positive", value: parseFloat((result.sentiment_scores.Positive * 100).toFixed(1)) },
-        { name: "Neutral", value: parseFloat((result.sentiment_scores.Neutral * 100).toFixed(1)) },
         { name: "Negative", value: parseFloat((result.sentiment_scores.Negative * 100).toFixed(1)) },
       ]
     : [];
@@ -243,8 +237,8 @@ export default function SentimentAnalysis() {
               </ResponsiveContainer>
 
               {/* Score Details */}
-              <div className="grid grid-cols-3 gap-3">
-                {["Positive", "Neutral", "Negative"].map((sentiment) => (
+              <div className="grid grid-cols-2 gap-3">
+                {["Positive", "Negative"].map((sentiment) => (
                   <div
                     key={sentiment}
                     className="p-3 border rounded-lg text-center space-y-1"

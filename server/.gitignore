@@ -261,3 +261,6 @@ celerybeat.pid
 .aws/
 .azure/
 .gcloud/
+
+
+models/

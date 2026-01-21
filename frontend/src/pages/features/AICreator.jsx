@@ -67,7 +67,7 @@ export default function AICreator() {
         try {
             const formData = new FormData();
             formData.append("caption", caption);
-            formData.append("image_url", "https://media.licdn.com/dms/image/v2/C5603AQGtLGnarX0xag/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1662869334520?e=2147483647&v=beta&t=0T6n29vgNp3rqlfc6SYc-FdHCK9LzDCt90rjReCyg3Q");
+            formData.append("image_url", "https://ectodermal-blondell-unmarred.ngrok-free.dev" + generatedImages[0]);
 
             const res = await axios.post("/api/dashboard/publish_post/", formData, {
                 headers: {
