@@ -612,10 +612,13 @@ curl -X GET http://localhost:8000/dashboard/instagram/profile/ \
 ```json
 {
   "profile": {
-    "id": "17841405793187218",
-    "username": "mybusiness_insta",
-    "account_type": "BUSINESS",
-    "media_count": 245
+    "id": "32368885989421576",
+    "name": "Camilla Apollo",
+    "follows_count": 1,
+    "followers_count": 1,
+    "media_count": 11,
+    "username": "agen1blab",
+    "account_type": "BUSINESS"
   }
 }
 ```
@@ -711,13 +714,20 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/ \
 ```json
 {
   "post_details": {
-    "id": "17841405793187218",
-    "caption": "Amazing sunset vibes! 🌅",
+    "id": "18049593017392591",
+    "caption": "NAH, I'D WIN\"",
     "media_type": "IMAGE",
-    "media_url": "https://scontent.cdninstagram.com/...",
-    "permalink": "https://www.instagram.com/p/CxYz123AbCD/",
-    "thumbnail_url": null,
-    "timestamp": "2024-12-01T15:30:00+0000"
+    "media_url": "https://scontent.cdninstagram.com/v/...",
+    "permalink": "https://www.instagram.com/p/DRpqb8xE-Ln/",
+    "timestamp": "2025-11-29T18:48:09+0000",
+    "comments_count": 6,
+    "like_count": 2,
+    "media_product_type": "FEED",
+    "owner": {
+      "id": "32368885989421576"
+    },
+    "shortcode": "DRpqb8xE-Ln",
+    "username": "agen1blab"
   }
 }
 ```
@@ -757,35 +767,27 @@ curl -X GET http://localhost:8000/dashboard/instagram/insights/ \
 ```json
 {
   "insights": {
-    "account_metrics": {
-      "reach": [{"value": 5420}],
-      "impressions": [{"value": 8350}],
-      "profile_views": [{"value": 320}],
-      "accounts_engaged": [{"value": 450}],
-      "follower_count": [{"value": 2150}],
-      "likes": [{"value": 1230}],
-      "comments": [{"value": 89}],
-      "saved": [{"value": 45}],
-      "shares": [{"value": 32}]
-    },
-    "demographics": {
-      "follower_demographics": {
-        "country": [
-          {"US": 450},
-          {"GB": 230},
-          {"CA": 180}
-        ],
-        "city": [
-          {"New York": 120},
-          {"London": 95}
-        ],
-        "age_gender": {
-          "18-24.M": 350,
-          "25-34.F": 420,
-          "35-44.M": 280
+    "reach": {
+      "name":"reach",
+      "period": "day",
+      "values": [
+        {
+          "value": 0,
+          "end_time": "2026-01-20T08:00:00+0000"
+        },
+        {
+          "value": 3,
+          "end_time": "2026-01-21T08:00:00+0000"
+        },
+        {
+          "value": 1,
+          "end_time": "2026-01-22T08:00:00+0000"
         }
-      }
-    }
+      ],
+      "title": "Reach",
+      "description": "Total number of times the Business Account's media objects have been uniquely viewed",
+      "id": "17841474963648498/insights/reach/day"
+    },
   }
 }
 ```
@@ -826,16 +828,33 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/ins
 ```json
 {
   "insights": {
-    "reach": [{"value": 1450}],
-    "impressions": [{"value": 2350}],
-    "engagement": [{"value": 187}],
-    "saved": [{"value": 23}],
-    "video_views": [{"value": 0}],
-    "carousel_album_impressions": null,
-    "carousel_album_reach": null,
-    "carousel_album_engagement": null
+    {
+      "name": "comments",
+      "period": "lifetime",
+      "values": [
+        {
+          "value": 6
+        }
+      ],
+      "title": "Comments",
+      "description": "The number of comments on your post.",
+      "id": "18049593017392591/insights/comments/lifetime"
+    },
+    {
+      "name": "follows",
+      "period": "lifetime",
+      "values": [
+        {
+          "value": 0
+        }
+      ],
+      "title": "Follows",
+      "description": "This is how many accounts started following you.",
+      "id": "18049593017392591/insights/follows/lifetime"
+    },
   }
 }
+Possible titles: "comments", "follows","likes","profile_activity","profile_visits","reach","saved","saved","shares","total_interactions","views"
 ```
 
 **Error Response (404):**

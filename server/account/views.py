@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from account.models import IGBusinessAccount, CustomUser, IGAccessToken
 from account.serializer import IGBusinessAccountSerializer
 from server.utils.logger import logger
-from server.utils.instagram_api import fetch_long_lived_token, fetch_business_account_id
+from server.utils.instagram_api import fetch_long_lived_token, fetch_business_account
 
 
 @api_view(['POST'])
@@ -112,7 +112,8 @@ class IGBusinessAccountViewSet(viewsets.ModelViewSet):
             if 'business_account_id' not in request.data:
                 print("Fetching business account id...")
                 access_token = request.data.get('access_token')
-                business_account_id = fetch_business_account_id(access_token)
+                business_account = fetch_business_account(access_token)
+                business_account_id = business_account.get('id') if business_account else None
                 print(f"Fetched business account id: {business_account_id}")
                 if not business_account_id:
                     return Response(

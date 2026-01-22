@@ -1,12 +1,20 @@
 import os
+
+from traitlets import Any
 from .logger import logger
 import requests
 
+from typing import Dict, Any
 
-def fetch_business_account_id(access_token: str):
+from datetime import datetime, timedelta
+import time
+
+
+
+def fetch_business_account(access_token: str):
     url = 'https://graph.instagram.com/me'
     params = {
-        'fields': 'id,username',
+        'fields': 'id,name,biography,website,follows_count,followers_count,media_count,username,account_type',
         'access_token': access_token
     }
 
@@ -14,8 +22,7 @@ def fetch_business_account_id(access_token: str):
 
     if response.status_code == 200:
         data = response.json()
-        account_id = data.get('id')
-        return account_id
+        return data
     else:
         logger.error(f'Error fetching account ID: {response.status_code} - {response.text}')
         return None
@@ -40,7 +47,8 @@ def generate_creation_object(image_url: str, caption: str, access_token: str, bu
         return None 
 
 
-def publish_creation(creation_id: str, access_token: str, business_account_id: str):
+def publish_creation(creation_id: str, access_token: str, business_account_id: str, retry_count: int = 2):
+
     publish_url = f'https://graph.instagram.com/v23.0/{business_account_id}/media_publish'
     publish_payload = {
         'creation_id': creation_id,
@@ -55,6 +63,15 @@ def publish_creation(creation_id: str, access_token: str, business_account_id: s
         media_id = publish_data.get('id')
         return media_id
     else:
+        logger.warning(f'Error publishing media: {publish_response.status_code} - {publish_response.text}')
+        time.sleep(2) 
+        publish_response = requests.post(publish_url, data=publish_payload)
+        if publish_response.status_code == 200:
+            logger.info('Media published successfully on retry!')
+            publish_data = publish_response.json()
+            media_id = publish_data.get('id')
+            return media_id
+        
         logger.error(f'Error publishing media: {publish_response.status_code} - {publish_response.text}')
         return None
 
@@ -145,7 +162,7 @@ def fetch_all_posts(business_account_id: str, access_token: str):
 def fetch_post_details(media_id: str, access_token: str):
     url = f'https://graph.instagram.com/v23.0/{media_id}'
     params = {
-        'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp',
+        'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,comments_count,like_count,media_product_type,owner,shortcode,is_shared_to_feed,username',
         'access_token': access_token
     }
 
@@ -182,34 +199,17 @@ def fetch_post_insights(media_id: str, access_token: str, api_version: str = "v2
 
     params = {
         'metric': ','.join([
-            'reach',
-            'follower_count',
-            'website_clicks',
-            'profile_views',
-            'online_followers',
-            'accounts_engaged',
-            'total_interactions',
-            'likes',
-            'comments',
-            'shares',
-            'saves',
-            'replies',
-            'engaged_audience_demographics',
-            'reached_audience_demographics',
-            'follower_demographics',
-            'follows_and_unfollows',
-            'profile_links_taps',
-            'views',
-            'threads_likes',
-            'threads_replies',
-            'reposts',
-            'quotes',
-            'threads_followers',
-            'threads_follower_demographics',
-            'content_views',
-            'threads_views',
-            'threads_clicks',
-            'threads_reposts',
+            "comments",
+            "follows",
+            "likes",
+            "profile_activity",
+            "profile_visits",
+            "reach",
+            "saved",
+            "saved",
+            "shares",
+            "total_interactions",
+            "views"
     ]),
     'access_token': access_token
 }
@@ -218,15 +218,13 @@ def fetch_post_insights(media_id: str, access_token: str, api_version: str = "v2
 
     if response.status_code == 200:
         data = response.json().get('data', [])
-
-        result = {entry.get('name'): entry.get('values') or entry.get('value') for entry in data}
-        return result
+        return data
     else:
         logger.error(f'Error fetching post insights: {response.status_code} - {response.text}')
         return None
 
 
-def fetch_account_and_audience_insights(user_id: str, access_token: str, api_version: str = "v23.0", duration='lifetime'):
+def fetch_account_and_audience_insights(user_id: str, access_token: str, api_version: str = "v24.0", duration='week'):
     base_url = f'https://graph.instagram.com/{api_version}/{user_id}/insights'
 
 
@@ -332,3 +330,76 @@ def fetch_profile_info(business_account_id: str, access_token: str):
     else:
         logger.error(f'Error fetching profile info: {response.status_code} - {response.text}')
         return None
+    
+
+def get_all_instagram_user_insights(
+    user_id: str,
+    access_token: str,
+    since: str | None = None,
+    until: str | None = None,
+    period: str | None = "day"
+) -> list[Dict[str, Any]]:
+    """
+    Fetches all possible Instagram User Insights
+    with correct metric–period mappings.
+
+    Parameters
+    ----------
+    user_id : str | None
+        Instagram Business or Creator Account ID
+    access_token : str
+        Valid Instagram Graph API access token
+    since : str | None
+        ISO date (YYYY-MM-DD) for day-based metrics
+    until : str | None
+        ISO date (YYYY-MM-DD) for day-based metrics
+    period : str | None
+        Period for the insights (default is "day")
+
+    Returns
+    -------
+    list[Dict[str, Any]]
+        List of Instagram User Insights data
+    """
+
+    metrics = ["reach", "follower_count", "website_clicks", "profile_views", "online_followers", "accounts_engaged", "total_interactions", "likes", "comments", "shares", "saves", "replies", "engaged_audience_demographics", "reached_audience_demographics", "follower_demographics", "follows_and_unfollows", "profile_links_taps", "views", "threads_likes", "threads_replies", "reposts", "quotes", "threads_followers", "threads_follower_demographics", "content_views", "threads_views", "threads_clicks", "threads_reposts"]
+
+    GRAPH_API_BASE = "https://graph.facebook.com/v24.0"
+    url = f"{GRAPH_API_BASE}/{user_id}/insights"
+
+    results: list[Dict[str, Any]] = []
+
+    if not until:
+        until = datetime.now().date().isoformat()
+    if not since:
+        since_date = datetime.now().date() - timedelta(days=7)
+        since = since_date.isoformat()
+
+    if  datetime.fromisoformat(until) - datetime.fromisoformat(since) >= timedelta(days=730):
+        logger.warning("  The maximum allowed range between 'since' and 'until' is 730 days. Adjusting 'since' accordingly.")
+        since_date = datetime.fromisoformat(until) - timedelta(days=7)
+        since = since_date.date().isoformat()
+    
+    params = {
+        "metric": ",".join(metrics),
+        "period": period,
+        "since": since,
+        "until": until,
+        "access_token": access_token,
+    }
+    
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    if response.status_code != 200:
+        logger.error(f'Error fetching insights: {response.status_code} - {response.text}')
+        return results
+
+    for metric_data in data.get("data", []):
+        metric_name = metric_data.get("name")
+        if metric_name:
+            results.append({
+                metric_name: metric_data
+            })
+        
+    return results

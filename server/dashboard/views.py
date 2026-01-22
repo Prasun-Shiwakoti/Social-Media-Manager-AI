@@ -55,9 +55,8 @@ def fetch_user_instagram_profile(request) -> Response:
         custom_user = request.user.customuser
         business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
         access_token = business_account.access_token.access_token
-        business_account_id = business_account.business_account_id
 
-        profile_data = insta_api.fetch_profile_info(business_account_id, access_token)
+        profile_data = insta_api.fetch_business_account(access_token)
 
         return Response({"profile": profile_data}, status=200)
     
@@ -254,8 +253,11 @@ def get_instagram_insights(request):
         business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
         business_account_id = business_account.business_account_id
         access_token = business_account.access_token.access_token
+        period = request.query_params.get('period', 'day')
+        since = request.query_params.get('since', None)
+        until = request.query_params.get('until', None)
 
-        insights = insta_api.fetch_account_and_audience_insights(business_account_id, access_token)
+        insights = insta_api.get_all_instagram_user_insights(business_account_id, access_token, since, until, period)
         return Response({'insights': insights}, status=200)
     
     except IGBusinessAccount.DoesNotExist:
