@@ -26,6 +26,7 @@ class IGBusinessAccount(models.Model):
     custom_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     business_account_id = models.CharField(max_length=100, blank=True, null=True)
     access_token = models.ForeignKey(IGAccessToken, on_delete=models.CASCADE)
+    username = models.CharField(max_length=255, blank=True, null=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     logo = models.ImageField(upload_to='business_logos/', blank=True, null=True)

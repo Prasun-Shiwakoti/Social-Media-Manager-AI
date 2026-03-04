@@ -3,6 +3,10 @@ from account.models import IGBusinessAccount, IGAccessToken
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.exceptions import ValidationError
+import threading
+
+from server.utils.rag_pipeline import rag_pipeline
+from server.utils.logger import logger
 
 
 
@@ -26,6 +30,7 @@ class IGBusinessAccountSerializer(serializers.ModelSerializer):
             "id",
             "business_account_id",
             "name",
+            "username",
             "description",
             "logo",
             "access_token",       # write-only raw token
@@ -53,7 +58,21 @@ class IGBusinessAccountSerializer(serializers.ModelSerializer):
 
         validated_data["custom_user"] = custom_user
 
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+
+        # Trigger background ingestion of business description into RAG
+        try:
+            if getattr(instance, "business_account_id", None):
+                threading.Thread(
+                    target=rag_pipeline.ingest_business,
+                    args=(str(instance.business_account_id), instance.description, False),
+                    daemon=True,
+                ).start()
+                logger.info(f"Triggered RAG ingest for business {instance.business_account_id} on create")
+        except Exception as e:
+            logger.error(f"Failed to trigger RAG ingest on create: {e}")
+
+        return instance
 
     def update(self, instance, validated_data):
         raw_token = validated_data.pop("access_token", None)
@@ -68,5 +87,18 @@ class IGBusinessAccountSerializer(serializers.ModelSerializer):
             old_token.access_token = raw_token
             old_token.expires_at = timezone.now() + timedelta(days=60)
             old_token.save()
+
+        # Trigger background ingestion after update (if business id exists)
+        try:
+            business_id = getattr(instance, "business_account_id", None)
+            if business_id:
+                threading.Thread(
+                    target=rag_pipeline.ingest_business,
+                    args=(str(business_id), instance.description, False),
+                    daemon=True,
+                ).start()
+                logger.info(f"Triggered RAG ingest for business {business_id} on update")
+        except Exception as e:
+            logger.error(f"Failed to trigger RAG ingest on update: {e}")
 
         return instance

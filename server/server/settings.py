@@ -14,8 +14,9 @@ import os
 
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
 
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,13 +26,60 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("DJANGO_SECRET_KEY")        
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")        
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = bool(os.getenv("DEBUG", default=False))
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", default="*").split(",")
 
+COMMON_IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_API_KEY")
+
+HF_KEY = os.getenv("HF_API_KEY", default=None)   
+if not HF_KEY:
+    raise ValueError("HF_API_KEY environment variable not set. Please set it before running the application.")
+
+WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
+MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT", default="http://localhost:11434")
+
+BASE_CHROMA_PATH = Path("chroma")
+LOGS_PATH = Path("logs")
+
+EMBEDDING_MODEL = "nomic-embed-text"
+LLM_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+MAX_TOKENS = 300
+TEMPERATURE = 0.7
+
+CHUNK_SIZE = 200
+CHUNK_OVERLAP = 50
+
+TOP_K = 5
+DISTANCE_THRESHOLD = 1
+
+LLM_INSTRUCTION = """
+You are a business auto-reply assistant.
+
+Rules:
+- Output the answer directly with no preamble
+- Answer ONLY using the provided context.
+- If the question is related to the business but the answer is not explicitly stated in the context,
+  reply exactly:
+  "I currently don't have enough information on your query, let me get you connected with our team."
+- Keep replies short, clear, and polite.
+- Do not make up information or provide opinions.
+- Do NOT escalate unless you don't know.
+- Do NOT mention human handoff unless information is missing.
+- If the question is NOT related to the company, its products, services, or operations,
+  reply exactly:
+  "This question is not related to our business. I'm here to assist you with information about our company, products, services, and operations. If you have any questions in those areas, feel free to ask!"
+"""
+
+# Load API key from environment variable
+
+FALLBACK_MESSAGE = (
+    "Thanks for your message! "
+    "Let me connect you with our team for further assistance."
+)
 
 # Application definition
 
@@ -44,6 +92,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'dashboard',
+    'webhook',
 
     'rest_framework',
     'corsheaders',

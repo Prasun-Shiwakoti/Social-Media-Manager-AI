@@ -21,6 +21,7 @@ Authorization: Bearer <your_access_token>
 5. [Instagram Profile & Posts](#instagram-profile--posts)
 6. [Instagram Insights](#instagram-insights)
 7. [Instagram Comments](#instagram-comments)
+8. [Automatic DM Auto-Reply (RAG Pipeline)](#automatic-dm-auto-reply-rag-pipeline)
 
 ---
 
@@ -161,6 +162,7 @@ curl -X GET http://localhost:8000/account/business-accounts/ \
   {
     "id": 1,
     "business_account_id": "17841405793187218",
+    "username": "agen1blab",
     "name": "My Business",
     "description": "Business description",
     "logo": null,
@@ -190,7 +192,7 @@ Create a new Instagram Business Account.
 **Request Body:**
 ```json
 {
-  "business_account_id": "string",
+  "business_account_id": "string (optional, auto-fetched if omitted)",
   "name": "string",
   "description": "string (optional)",
   "access_token": "string",
@@ -217,6 +219,7 @@ curl -X POST http://localhost:8000/account/business-accounts/ \
 {
   "id": 1,
   "business_account_id": "17841405793187218",
+  "username": "agen1blab",
   "name": "My Business",
   "description": "A social media business account",
   "logo": null,
@@ -255,6 +258,7 @@ curl -X GET http://localhost:8000/account/business-accounts/1/ \
 {
   "id": 1,
   "business_account_id": "17841405793187218",
+  "username": "agen1blab",
   "name": "My Business",
   "description": "A social media business account",
   "logo": null,
@@ -308,6 +312,7 @@ curl -X PUT http://localhost:8000/account/business-accounts/1/ \
 {
   "id": 1,
   "business_account_id": "17841405793187218",
+  "username": "agen1blab",
   "name": "Updated Business Name",
   "description": "A social media business account",
   "logo": null,
@@ -933,6 +938,19 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/com
 
 ---
 
+### RAG Pipeline Behavior
+
+- On business account create/update, business `description` is ingested into a ChromaDB collection keyed by `business_account_id`.
+- DM auto-replies use retrieval + generation with business-specific context.
+- If no relevant context is found or an error occurs, a fallback message is used.
+
+### Prerequisites for DM AI Auto-Reply
+
+1. Ollama running (default endpoint: `http://localhost:11434`)
+2. Embedding model available in Ollama: `nomic-embed-text`
+
+---
+
 ## Error Codes Summary
 
 | Status Code | Description |
@@ -952,7 +970,7 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/com
 
 1. **Authentication**: Most endpoints require JWT authentication. Use the token obtained from `/account/token/` endpoint.
 
-2. **Token Expiry**: Access tokens expire after 5 minutes. Use the refresh token to get a new access token via `/account/token/refresh/`.
+2. **Token Expiry**: JWT access and refresh lifetimes are configured in server settings (SimpleJWT).
 
 3. **Instagram Business Account**: Many dashboard endpoints require that the user has set up an Instagram Business Account through the system.
 

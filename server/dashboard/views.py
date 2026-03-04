@@ -5,8 +5,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 
 
-from server.utils.logger import logger
 from .models import PostImage, InstagramPost 
+from server.utils.logger import logger
 from server.utils.llm_api_calls import expand_prompt, generate_image as generate_image_ai, generate_caption as generate_caption_ai
 from server.utils.sentiment_model import predict_sentiment as analyze_sentiment
 import server.utils.instagram_api as insta_api

@@ -1,5 +1,4 @@
 import os
-import io
 
 from huggingface_hub import InferenceClient
 from PIL import Image

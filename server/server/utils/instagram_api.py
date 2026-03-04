@@ -10,9 +10,11 @@ from datetime import datetime, timedelta
 import time
 
 
+HOST_URL = os.getenv('META_HOST_URL', 'https://graph.instagram.com/')
+API_VERSION = os.getenv('META_API_VERSION', 'v24.0')
 
 def fetch_business_account(access_token: str):
-    url = 'https://graph.instagram.com/me'
+    url = f'{HOST_URL}me'
     params = {
         'fields': 'id,name,biography,website,follows_count,followers_count,media_count,username,account_type',
         'access_token': access_token
@@ -28,8 +30,25 @@ def fetch_business_account(access_token: str):
         return None
 
 
-def generate_creation_object(image_url: str, caption: str, access_token: str, business_account_id: str):
-    url = f'https://graph.instagram.com/v23.0/{business_account_id}/media'
+def fetch_others_accounts(access_token: str, account_id: str):
+    url = f'{HOST_URL}{account_id}'
+    params = {
+        'fields': 'id,username',
+        'access_token': access_token
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data
+    else:
+        logger.error(f'Error fetching other business accounts: {response.status_code} - {response.text}')
+        return None
+
+
+def generate_creation_object(image_url: str, caption: str, access_token: str, business_account_id: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{business_account_id}/media'
     payload = {
         'image_url': image_url,
         'caption': caption,
@@ -47,9 +66,9 @@ def generate_creation_object(image_url: str, caption: str, access_token: str, bu
         return None 
 
 
-def publish_creation(creation_id: str, access_token: str, business_account_id: str, retry_count: int = 2):
+def publish_creation(creation_id: str, access_token: str, business_account_id: str, retry_count: int = 2, api_version: str = API_VERSION):
 
-    publish_url = f'https://graph.instagram.com/v23.0/{business_account_id}/media_publish'
+    publish_url = f'{HOST_URL}{api_version}/{business_account_id}/media_publish'
     publish_payload = {
         'creation_id': creation_id,
         'access_token': access_token
@@ -76,8 +95,8 @@ def publish_creation(creation_id: str, access_token: str, business_account_id: s
         return None
 
 
-def get_post_permalink(media_id: str, access_token: str):
-    media_url = f'https://graph.instagram.com/v23.0/{media_id}?fields=permalink&access_token={access_token}'
+def get_post_permalink(media_id: str, access_token: str, api_version: str = API_VERSION):
+    media_url = f'{HOST_URL}{api_version}/{media_id}?fields=permalink&access_token={access_token}'
     media_response = requests.get(media_url)
     if media_response.status_code == 200:
         media_data = media_response.json()
@@ -99,9 +118,9 @@ def create_and_publish_post(image_url: str, caption: str, access_token: str, bus
     return None
 
 
-def fetch_long_lived_token(code: str) -> str:
+def fetch_long_lived_token(code: str, api_version: str = API_VERSION) -> str:
     short_lived_token_url = 'https://api.instagram.com/oauth/access_token'
-    long_lived_token_url = 'https://graph.instagram.com/access_token'
+    long_lived_token_url = f'{HOST_URL}{api_version}/access_token'
 
     client_id = os.getenv('INSTAGRAM_CLIENT_ID')
     client_secret = os.getenv('INSTAGRAM_CLIENT_SECRET')
@@ -141,8 +160,8 @@ def fetch_long_lived_token(code: str) -> str:
         return None
 
 
-def fetch_all_posts(business_account_id: str, access_token: str):
-    url = f'https://graph.instagram.com/v23.0/{business_account_id}/media'
+def fetch_all_posts(business_account_id: str, access_token: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{business_account_id}/media'
     params = {
         'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp',
         'access_token': access_token
@@ -159,8 +178,8 @@ def fetch_all_posts(business_account_id: str, access_token: str):
         return None
 
 
-def fetch_post_details(media_id: str, access_token: str):
-    url = f'https://graph.instagram.com/v23.0/{media_id}'
+def fetch_post_details(media_id: str, access_token: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{media_id}'
     params = {
         'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,comments_count,like_count,media_product_type,owner,shortcode,is_shared_to_feed,username',
         'access_token': access_token
@@ -176,8 +195,8 @@ def fetch_post_details(media_id: str, access_token: str):
         return None
 
 
-def fetch_comments(media_id: str, access_token: str):
-    url = f'https://graph.instagram.com/v23.0/{media_id}/comments'
+def fetch_comments(media_id: str, access_token: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{media_id}/comments'
     params = {
         'fields': 'id,text,username,timestamp',
         'access_token': access_token
@@ -194,8 +213,8 @@ def fetch_comments(media_id: str, access_token: str):
         return None
     
 
-def fetch_post_insights(media_id: str, access_token: str, api_version: str = "v23.0"):
-    url = f'https://graph.instagram.com/{api_version}/{media_id}/insights'
+def fetch_post_insights(media_id: str, access_token: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{media_id}/insights'
 
     params = {
         'metric': ','.join([
@@ -224,8 +243,8 @@ def fetch_post_insights(media_id: str, access_token: str, api_version: str = "v2
         return None
 
 
-def fetch_account_and_audience_insights(user_id: str, access_token: str, api_version: str = "v24.0", duration='week'):
-    base_url = f'https://graph.instagram.com/{api_version}/{user_id}/insights'
+def fetch_account_and_audience_insights(user_id: str, access_token: str, api_version: str = API_VERSION, duration='week'):
+    base_url = f'{HOST_URL}{api_version}/{user_id}/insights'
 
 
     params_account = {
@@ -266,7 +285,6 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
 
     resp_account = requests.get(base_url, params=params_account)
 
-    print(resp_account.text)
     if resp_account.status_code != 200:
         logger.error(f'Error fetching account insights: {resp_account.status_code} - {resp_account.text}')
         account_metrics = None
@@ -287,7 +305,6 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
     }
 
     resp_demo = requests.get(base_url, params=params_demo)
-    print(resp_demo.text)
     if resp_demo.status_code != 200:
         demographics = None
         logger.warning(f'Could not fetch demographics: {resp_demo.status_code} - {resp_demo.text}')
@@ -301,22 +318,29 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
     }
 
 
-def reply_to_message(recipient_id: str, message: str, access_token: str, business_account_id: str):
-    url = f'https://graph.instagram.com/v23.0/{business_account_id}/messages'
+def reply_to_message(recipient_id: str, message: str, access_token: str, business_account_id: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{business_account_id}/messages'
     payload = {
         'recipient': {'id': recipient_id},
         'message': {'text': message},
         'access_token': access_token
     }
-    resp = requests.post(url, json=payload)
-    if resp.status_code == 200:
-        logger.info(f"Replied to {recipient_id} with message: {message}")
-    else:
-        logger.error(f"Error replying to message: {resp.status_code} - {resp.text}")
+    try:
+        resp = requests.post(url, json=payload)
+        print(f"\nReply response: {resp.status_code} - {resp.text}")
+        if resp.status_code == 200:
+            logger.info(f"Replied to {recipient_id} with message: {message}")
+            return True
+        else:
+            logger.error(f"Error replying to message: {resp.status_code} - {resp.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Exception while replying to message: {str(e)}")
+        return False
 
 
-def fetch_profile_info(business_account_id: str, access_token: str):
-    url = f'https://graph.instagram.com/v23.0/{business_account_id}'
+def fetch_profile_info(business_account_id: str, access_token: str, api_version: str = API_VERSION):
+    url = f'{HOST_URL}{api_version}/{business_account_id}'
     params = {
         'fields': 'id,username,account_type,media_count',
         'access_token': access_token
@@ -337,7 +361,8 @@ def get_all_instagram_user_insights(
     access_token: str,
     since: str | None = None,
     until: str | None = None,
-    period: str | None = "day"
+    period: str | None = "day",
+    api_version: str = API_VERSION,
 ) -> list[Dict[str, Any]]:
     """
     Fetches all possible Instagram User Insights
@@ -364,8 +389,7 @@ def get_all_instagram_user_insights(
 
     metrics = ["reach", "follower_count", "website_clicks", "profile_views", "online_followers", "accounts_engaged", "total_interactions", "likes", "comments", "shares", "saves", "replies", "engaged_audience_demographics", "reached_audience_demographics", "follower_demographics", "follows_and_unfollows", "profile_links_taps", "views", "threads_likes", "threads_replies", "reposts", "quotes", "threads_followers", "threads_follower_demographics", "content_views", "threads_views", "threads_clicks", "threads_reposts"]
 
-    GRAPH_API_BASE = "https://graph.facebook.com/v24.0"
-    url = f"{GRAPH_API_BASE}/{user_id}/insights"
+    url = f"{HOST_URL}{api_version}/{user_id}/insights"
 
     results: list[Dict[str, Any]] = []
 
@@ -403,3 +427,4 @@ def get_all_instagram_user_insights(
             })
         
     return results
+

@@ -38,4 +38,6 @@ urlpatterns = [
 
     # Sentiment Analysis API
     path('sentiment_analysis/', get_sentiment_score, name='get_sentiment_score'),
+
+    
 ]

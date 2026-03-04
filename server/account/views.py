@@ -15,6 +15,7 @@ from account.models import IGBusinessAccount, CustomUser, IGAccessToken
 from account.serializer import IGBusinessAccountSerializer
 from server.utils.logger import logger
 from server.utils.instagram_api import fetch_long_lived_token, fetch_business_account
+from server.utils.rag_pipeline import BusinessRAGPipeline
 
 
 @api_view(['POST'])
@@ -91,6 +92,8 @@ def get_signed_state(request):
         logger.error(f"Error generating signed state: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
+
+
 class IsBusinessOwner(BasePermission):
     """Allow only the owner of the business account to access it."""
 
@@ -110,17 +113,18 @@ class IGBusinessAccountViewSet(viewsets.ModelViewSet):
         """Standard DRF create using the serializer's custom logic."""
         try:
             if 'business_account_id' not in request.data:
-                print("Fetching business account id...")
                 access_token = request.data.get('access_token')
                 business_account = fetch_business_account(access_token)
                 business_account_id = business_account.get('id') if business_account else None
-                print(f"Fetched business account id: {business_account_id}")
+                business_account_username = business_account.get('username') if business_account else None
+                
                 if not business_account_id:
                     return Response(
                         {"error": "Unable to fetch Business Account ID with provided access token."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
                 request.data['business_account_id'] = business_account_id
+                request.data['username'] = business_account_username
 
             return super().create(request, *args, **kwargs)
         except Exception as e:
