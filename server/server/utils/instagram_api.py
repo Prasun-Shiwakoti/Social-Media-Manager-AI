@@ -1,6 +1,5 @@
 import os
 
-from traitlets import Any
 from .logger import logger
 import requests
 
