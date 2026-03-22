@@ -39,6 +39,16 @@ HF_KEY = os.getenv("HF_API_KEY", default=None)
 if not HF_KEY:
     raise ValueError("HF_API_KEY environment variable not set. Please set it before running the application.")
 
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", default='redis://localhost:6379/0')
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# Optional but recommended
+CELERY_RESULT_BACKEND = 'django-db'
+
+
 WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
 MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT", default="http://localhost:11434")
 
@@ -97,6 +107,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [

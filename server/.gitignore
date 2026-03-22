@@ -6,6 +6,7 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.sqlite3
 
 # Environment variables
 .env
@@ -264,3 +265,5 @@ celerybeat.pid
 
 
 models/
+chroma/
+venv/

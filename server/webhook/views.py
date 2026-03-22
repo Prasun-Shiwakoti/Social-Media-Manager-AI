@@ -32,7 +32,7 @@ def receive_webhook(request):
         logger.info(f"Received webhook of type: {webhook_type} with payload: {payload}")
         match webhook_type:
             case 'messages':
-                handle_message_webhook(payload)
+                handle_message_webhook.delay(payload)
                 
             case _:
                 logger.warning(f"Received unsupported webhook type: {webhook_type}")

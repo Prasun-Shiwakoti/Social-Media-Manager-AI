@@ -1,3 +1,4 @@
+from celery import shared_task
 from django.conf import settings
 
 from server.utils.logger import logger
@@ -8,6 +9,7 @@ from server.utils.rag_pipeline import rag_pipeline
 
 COMMON_API_TOKEN = settings.COMMON_IG_ACCESS_TOKEN
 
+@shared_task
 def handle_message_webhook(payload):
     try:
         

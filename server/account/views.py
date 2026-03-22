@@ -16,7 +16,38 @@ from account.serializer import IGBusinessAccountSerializer
 from server.utils.logger import logger
 from server.utils.instagram_api import fetch_long_lived_token, fetch_business_account
 from server.utils.rag_pipeline import BusinessRAGPipeline
+from rest_framework.views import APIView
+from account.serializer import UserProfileSerializer, ChangePasswordSerializer
 
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        custom_user = request.user.customuser
+        serializer = UserProfileSerializer(custom_user)
+        return Response(serializer.data)
+
+    def put(self, request):
+        custom_user = request.user.customuser
+        serializer = UserProfileSerializer(custom_user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            old_password = serializer.validated_data['old_password']
+            if not request.user.check_password(old_password):
+                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            request.user.set_password(serializer.validated_data['new_password'])
+            request.user.save()
+            return Response({"success": "Password changed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def register(request):
