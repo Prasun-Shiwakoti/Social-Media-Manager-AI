@@ -78,7 +78,7 @@ def generate_caption(request) -> Response:
         short_prompt = request.data.get('short_prompt', '')
         expanded_prompt = request.data.get('expanded_prompt', None)
 
-        caption = generate_caption(expanded_prompt, old_caption=short_prompt)
+        caption = generate_caption_ai(expanded_prompt, old_caption=short_prompt)
 
         return Response({"caption": caption})
     except Exception as e:
@@ -151,7 +151,8 @@ def publish_post(request):
         scheduled_time = datetime.fromisoformat(scheduled_time) if scheduled_time else None
         print("Before converting to UTC:", scheduled_time)
         #convert from local to utc
-        scheduled_time = scheduled_time.astimezone(pytz.UTC)
+        if scheduled_time:
+            scheduled_time = scheduled_time.astimezone(pytz.UTC)
         print("After converting to UTC:", scheduled_time)
 
 

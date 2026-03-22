@@ -7,8 +7,20 @@ import threading
 
 from server.utils.rag_pipeline import rag_pipeline
 from server.utils.logger import logger
+from account.models import CustomUser
+from django.contrib.auth.models import User
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
 
+    class Meta:
+        model = CustomUser
+        fields = ['f_name', 'l_name', 'username', 'email']
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
 
 class IGAccessTokenSerializer(serializers.ModelSerializer):
     class Meta:
