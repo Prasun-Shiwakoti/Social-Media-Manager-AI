@@ -30,6 +30,7 @@ def receive_webhook(request):
             webhook_type = 'messages'
 
         logger.info(f"Received webhook of type: {webhook_type} with payload: {payload}")
+        print(f"\nReceived webhook of type: {webhook_type} with payload: {payload}")
         match webhook_type:
             case 'messages':
                 handle_message_webhook.delay(payload)

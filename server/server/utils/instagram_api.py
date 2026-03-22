@@ -318,7 +318,7 @@ def fetch_account_and_audience_insights(user_id: str, access_token: str, api_ver
         'demographics': demographics
     }
 
-
+@shared_task
 def reply_to_message(recipient_id: str, message: str, access_token: str, business_account_id: str, api_version: str = API_VERSION):
     url = f'{HOST_URL}{api_version}/{business_account_id}/messages'
     payload = {
@@ -355,6 +355,90 @@ def fetch_profile_info(business_account_id: str, access_token: str, api_version:
     else:
         logger.error(f'Error fetching profile info: {response.status_code} - {response.text}')
         return None
+
+
+def fetch_conversations(
+    business_account_id: str,
+    access_token: str,
+    limit: int = 20,
+    after: str | None = None,
+    api_version: str = API_VERSION,
+):
+    """
+    Fetch a page of Instagram DM conversations for a business account.
+    """
+    url = f'{HOST_URL}{api_version}/{business_account_id}/conversations'
+    params = {
+        'fields': 'id,participants,updated_time',
+        'limit': max(1, min(limit, 100)),
+        'access_token': access_token,
+    }
+
+    if after:
+        params['after'] = after
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        return response.json()
+
+    logger.error(f'Error fetching conversations: {response.status_code} - {response.text}')
+    return None
+
+
+def fetch_conversation_messages(
+    conversation_id: str,
+    access_token: str,
+    limit: int = 20,
+    before: str | None = None,
+    after: str | None = None,
+    api_version: str = API_VERSION,
+):
+    """
+    Fetch a page of messages for a specific Instagram DM conversation.
+    """
+    url = f'{HOST_URL}{api_version}/{conversation_id}/messages'
+    params = {
+        'fields': 'id,message,from,to,created_time',
+        'limit': max(1, min(limit, 100)),
+        'access_token': access_token,
+    }
+
+    if before:
+        params['before'] = before
+    if after:
+        params['after'] = after
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        return response.json()
+
+    logger.error(f'Error fetching conversation messages: {response.status_code} - {response.text}')
+    return None
+
+
+def fetch_conversation_participants(
+    conversation_id: str,
+    access_token: str,
+    api_version: str = API_VERSION,
+):
+    """
+    Fetch participants for a conversation. Useful to determine reply recipient.
+    """
+    url = f'{HOST_URL}{api_version}/{conversation_id}'
+    params = {
+        'fields': 'id,participants,updated_time',
+        'access_token': access_token,
+    }
+
+    response = requests.get(url, params=params)
+
+    if response.status_code == 200:
+        return response.json()
+
+    logger.error(f'Error fetching conversation participants: {response.status_code} - {response.text}')
+    return None
     
 
 def get_all_instagram_user_insights(

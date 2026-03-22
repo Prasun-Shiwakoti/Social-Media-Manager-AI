@@ -21,7 +21,9 @@ Authorization: Bearer <your_access_token>
 5. [Instagram Profile & Posts](#instagram-profile--posts)
 6. [Instagram Insights](#instagram-insights)
 7. [Instagram Comments](#instagram-comments)
-8. [Automatic DM Auto-Reply (RAG Pipeline)](#automatic-dm-auto-reply-rag-pipeline)
+8. [Post Scheduling](#post-scheduling)
+9. [Instagram Conversations (DM Inbox)](#instagram-conversations-dm-inbox)
+10. [Automatic DM Auto-Reply (RAG Pipeline)](#automatic-dm-auto-reply-rag-pipeline)
 
 ---
 
@@ -501,8 +503,11 @@ Publish a post to Instagram with image and caption.
 - `caption` (string, required): Post caption
 - `image` (file, optional): Image file to upload
 - `image_url` (string, optional): Public URL of image (if not uploading file)
+- `scheduled_time` (string, optional): ISO datetime for scheduled publishing (example: `2026-03-22T18:30:00+00:00`)
 
 Note: Either `image` or `image_url` must be provided. `image_url` is preferred.
+
+If `scheduled_time` is provided, the post is queued for background execution and requires Redis + Celery worker running.
 
 **Example Request:**
 ```bash
@@ -518,6 +523,14 @@ curl -X POST http://localhost:8000/dashboard/publish_post/ \
   "message": "Post published successfully",
   "post_link": "https://www.instagram.com/p/CxYz123AbCD/",
   "media_id": "17841405793187218"
+}
+```
+
+**Success Response (200, Scheduled):**
+```json
+{
+  "message": "Post scheduled successfully",
+  "scheduled_time": "2026-03-22T18:30:00+00:00"
 }
 ```
 
@@ -938,6 +951,179 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/com
 
 ---
 
+## Post Scheduling
+
+Scheduled publishing uses the existing publish endpoint:
+
+**Endpoint:** `POST /dashboard/publish_post/`
+
+To schedule, include `scheduled_time` in form data.
+
+**Requirements:**
+- Redis running (broker)
+- Celery worker running
+
+**Example Request (Scheduled):**
+```bash
+curl -X POST http://localhost:8000/dashboard/publish_post/ \
+  -H "Authorization: Bearer <your_access_token>" \
+  -F "caption=Scheduled post" \
+  -F "image_url=https://www.public_image_url.com/generated_image.webp" \
+  -F "scheduled_time=2026-03-22T18:30:00+00:00"
+```
+
+---
+
+## Instagram Conversations (DM Inbox)
+
+### 22. Get All Conversations
+Fetch conversation threads for the authenticated user's Instagram business account.
+
+**Endpoint:** `GET /dashboard/instagram/conversations/`
+
+**Authentication:** Required
+
+**Query Parameters (optional):**
+- `paginated` (`true|false`, default: `false`)
+- `limit` (integer, default: `50`)
+- `after` (string cursor, used when `paginated=true`)
+
+**Example Request (all conversations):**
+```bash
+curl -X GET http://localhost:8000/dashboard/instagram/conversations/ \
+  -H "Authorization: Bearer <your_access_token>"
+```
+
+**Success Response (200):**
+```json
+{
+  "conversations": [
+    {
+      "id": "t_1234567890",
+      "updated_time": "2026-03-21T18:47:20+0000",
+      "participants": {
+        "data": [
+          {
+            "id": "17841400000000000",
+            "username": "customer123"
+          }
+        ]
+      }
+    }
+  ],
+  "count": 1,
+  "paging": null
+}
+```
+
+### 23. Get Messages for a Conversation (Paginated)
+Fetch a subset of messages for a conversation. Use cursors to load more.
+
+**Endpoint:** `GET /dashboard/instagram/conversations/{conversation_id}/messages/`
+
+**Authentication:** Required
+
+**Query Parameters (optional):**
+- `limit` (integer, default: `20`)
+- `before` (string cursor)
+- `after` (string cursor)
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:8000/dashboard/instagram/conversations/t_1234567890/messages/?limit=20" \
+  -H "Authorization: Bearer <your_access_token>"
+```
+
+**Success Response (200):**
+```json
+{
+  "conversation_id": "t_1234567890",
+  "messages": [
+    {
+      "id": "m_111",
+      "text": "Hi",
+      "created_time": "2026-03-21T18:47:20+0000",
+      "direction": "incoming",
+      "from": {
+        "id": "17841400000000000",
+        "username": "customer123"
+      },
+      "to": [
+        {
+          "id": "17841499999999999",
+          "username": "yourbusiness"
+        }
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFI...",
+      "after": "QVFI..."
+    },
+    "next": "https://graph.instagram.com/...",
+    "previous": "https://graph.instagram.com/..."
+  }
+}
+```
+
+### 24. Reply to a Conversation
+Send a DM response to a specific conversation.
+
+**Endpoint:** `POST /dashboard/instagram/conversations/{conversation_id}/reply/`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "message": "Thanks for reaching out!"
+}
+```
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8000/dashboard/instagram/conversations/t_1234567890/reply/ \
+  -H "Authorization: Bearer <your_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Thanks for reaching out!"}'
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "conversation_id": "t_1234567890",
+  "recipient_id": "17841400000000000",
+  "message": "Thanks for reaching out!"
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "error": "message is required"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "error": "Instagram Business Account not found"
+}
+```
+
+**Error Response (502):**
+```json
+{
+  "error": "Failed to send reply message"
+}
+```
+
+---
+
+## Automatic DM Auto-Reply (RAG Pipeline)
+
 ### RAG Pipeline Behavior
 
 - On business account create/update, business `description` is ingested into a ChromaDB collection keyed by `business_account_id`.
@@ -983,6 +1169,10 @@ curl -X GET http://localhost:8000/dashboard/instagram/post/17841405793187218/com
 7. **AI Generation**: The generate_post, generate_image, and generate_caption endpoints use AI models and may take several seconds to respond.
 
 8. **Instagram Insights**: Some metrics may return null or empty arrays if the account doesn't meet Instagram's requirements for insights (e.g., minimum follower count, business account type).
+
+9. **Scheduling Requirements**: Scheduled publishing requires Redis and a running Celery worker.
+
+10. **DM Pagination**: Conversation messages are cursor-paginated (`before`/`after`). Request small pages and fetch more only when needed.
 
 ---
 

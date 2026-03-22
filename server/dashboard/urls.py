@@ -12,6 +12,9 @@ from dashboard.views import (
     get_instagram_post_insights,
     get_instagram_post_comments,
     get_sentiment_score,
+    get_instagram_conversations,
+    get_instagram_conversation_messages,
+    reply_to_instagram_conversation,
 )
 
 urlpatterns = [
@@ -35,6 +38,11 @@ urlpatterns = [
     
     # Instagram Comments APIs
     path('instagram/post/<str:media_id>/comments/', get_instagram_post_comments, name='get_instagram_post_comments'),
+
+    # Instagram Conversations APIs
+    path('instagram/conversations/', get_instagram_conversations, name='get_instagram_conversations'),
+    path('instagram/conversations/<str:conversation_id>/messages/', get_instagram_conversation_messages, name='get_instagram_conversation_messages'),
+    path('instagram/conversations/<str:conversation_id>/reply/', reply_to_instagram_conversation, name='reply_to_instagram_conversation'),
 
     # Sentiment Analysis API
     path('sentiment_analysis/', get_sentiment_score, name='get_sentiment_score'),

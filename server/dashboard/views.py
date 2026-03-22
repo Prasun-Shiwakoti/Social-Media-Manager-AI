@@ -315,5 +315,247 @@ def get_instagram_post_comments(request, media_id):
     except Exception as e:
         logger.error(f"Error fetching Instagram post comments: {e}")
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_instagram_conversations(request):
+    """
+    Fetch a paginated list of conversations for the authenticated user's
+    Instagram business account.
+    """
+    try:
+        custom_user = request.user.customuser
+        business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
+
+        business_account_id = business_account.business_account_id
+        access_token = business_account.access_token.access_token
+
+        if not business_account_id:
+            return Response({'error': 'Instagram Business Account ID not found'}, status=400)
+
+        try:
+            limit = int(request.query_params.get('limit', 50))
+        except (TypeError, ValueError):
+            limit = 50
+
+        paginated = str(request.query_params.get('paginated', 'false')).lower() == 'true'
+
+        if paginated:
+            after = request.query_params.get('after')
+            data = insta_api.fetch_conversations(
+                business_account_id=business_account_id,
+                access_token=access_token,
+                limit=limit,
+                after=after,
+            )
+
+            if data is None:
+                return Response({'error': 'Failed to fetch conversations from Instagram API'}, status=502)
+
+            conversations = data.get('data', [])
+            paging = data.get('paging', {})
+
+            return Response(
+                {
+                    'conversations': conversations,
+                    'paging': {
+                        'cursors': paging.get('cursors', {}),
+                        'next': paging.get('next'),
+                    },
+                },
+                status=200,
+            )
+
+        all_conversations = []
+        after_cursor = None
+        # Safety cap to avoid infinite loop on malformed pagination responses.
+        max_pages = 100
+
+        for _ in range(max_pages):
+            data = insta_api.fetch_conversations(
+                business_account_id=business_account_id,
+                access_token=access_token,
+                limit=limit,
+                after=after_cursor,
+            )
+
+            if data is None:
+                return Response({'error': 'Failed to fetch conversations from Instagram API'}, status=502)
+
+            all_conversations.extend(data.get('data', []))
+            paging = data.get('paging', {})
+            after_cursor = (paging.get('cursors') or {}).get('after')
+
+            if not paging.get('next') or not after_cursor:
+                break
+
+        return Response(
+            {
+                'conversations': all_conversations,
+                'count': len(all_conversations),
+                'paging': None,
+            },
+            status=200,
+        )
+
+    except IGBusinessAccount.DoesNotExist:
+        return Response({'error': 'Instagram Business Account not found'}, status=404)
+
+    except Exception as e:
+        logger.error(f"Error fetching Instagram conversations: {e}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_instagram_conversation_messages(request, conversation_id):
+    """
+    Fetch a paginated list of messages for a specific conversation.
+    """
+    try:
+        custom_user = request.user.customuser
+        business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
+
+        business_account_id = business_account.business_account_id
+        access_token = business_account.access_token.access_token
+
+        if not business_account_id:
+            return Response({'error': 'Instagram Business Account ID not found'}, status=400)
+
+        try:
+            limit = int(request.query_params.get('limit', 20))
+        except (TypeError, ValueError):
+            limit = 20
+
+        before = request.query_params.get('before')
+        after = request.query_params.get('after')
+
+        data = insta_api.fetch_conversation_messages(
+            conversation_id=conversation_id,
+            access_token=access_token,
+            limit=limit,
+            before=before,
+            after=after,
+        )
+
+        if data is None:
+            return Response({'error': 'Failed to fetch conversation messages from Instagram API'}, status=502)
+
+        raw_messages = data.get('data', [])
+        normalized_messages = []
+
+        for message in raw_messages:
+            from_user = message.get('from', {}) or {}
+            to_data = (message.get('to', {}) or {}).get('data', [])
+
+            direction = 'incoming'
+            if str(from_user.get('id')) == str(business_account_id):
+                direction = 'outgoing'
+
+            normalized_messages.append(
+                {
+                    'id': message.get('id'),
+                    'text': message.get('message', ''),
+                    'created_time': message.get('created_time'),
+                    'direction': direction,
+                    'from': {
+                        'id': from_user.get('id'),
+                        'username': from_user.get('username'),
+                    },
+                    'to': to_data,
+                }
+            )
+
+        paging = data.get('paging', {})
+
+        return Response(
+            {
+                'conversation_id': conversation_id,
+                'messages': normalized_messages,
+                'paging': {
+                    'cursors': paging.get('cursors', {}),
+                    'next': paging.get('next'),
+                    'previous': paging.get('previous'),
+                },
+            },
+            status=200,
+        )
+
+    except IGBusinessAccount.DoesNotExist:
+        return Response({'error': 'Instagram Business Account not found'}, status=404)
+
+    except Exception as e:
+        logger.error(f"Error fetching Instagram conversation messages: {e}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reply_to_instagram_conversation(request, conversation_id):
+    """
+    Send a reply message to a specific conversation.
+    """
+    try:
+        text = request.data.get('message', '')
+        if not text or not str(text).strip():
+            return Response({'error': 'message is required'}, status=400)
+
+        custom_user = request.user.customuser
+        business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
+
+        business_account_id = business_account.business_account_id
+        access_token = business_account.access_token.access_token
+
+        if not business_account_id:
+            return Response({'error': 'Instagram Business Account ID not found'}, status=400)
+
+        conversation_data = insta_api.fetch_conversation_participants(
+            conversation_id=conversation_id,
+            access_token=access_token,
+        )
+        me = insta_api.fetch_business_account(access_token)
+
+
+
+        if conversation_data is None:
+            return Response({'error': 'Failed to fetch conversation participants'}, status=502)
+
+        participants = (conversation_data.get('participants') or {}).get('data', [])
+        recipient = None
+        for participant in participants:
+            if str(participant.get('username')) != str(me.get('username')):
+                recipient = participant
+                break
+
+        if not recipient:
+            return Response({'error': 'Unable to determine conversation recipient'}, status=400)
+
+        is_sent = insta_api.reply_to_message(
+            recipient_id=recipient.get('id'),
+            message=str(text).strip(),
+            access_token=access_token,
+            business_account_id=business_account_id,
+        )
+
+        if not is_sent:
+            return Response({'error': 'Failed to send reply message'}, status=502)
+
+        return Response(
+            {
+                'success': True,
+                'conversation_id': conversation_id,
+                'recipient_id': recipient.get('id'),
+                'message': str(text).strip(),
+            },
+            status=200,
+        )
+
+    except IGBusinessAccount.DoesNotExist:
+        return Response({'error': 'Instagram Business Account not found'}, status=404)
+
+    except Exception as e:
+        logger.error(f"Error replying to Instagram conversation: {e}")
+        return Response({'error': str(e)}, status=500)
     
 

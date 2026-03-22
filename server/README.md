@@ -15,6 +15,7 @@ A Django-based REST API server for managing Instagram business accounts with AI-
 
 - Python 3.9 or higher
 - pip (Python package manager)
+- Redis (required for Celery broker)
 - Git (optional, for version control)
 - Instagram Business Account
 - Facebook Developer App with Instagram API access
@@ -54,6 +55,12 @@ pip install -r requirements.txt
 Create a `.env` file in the server root directory (where `manage.py` is located):
 Use the sample env file for reference.
 
+Recommended Celery/Redis configuration:
+
+```env
+CELERY_BROKER_URL=redis://localhost:6379/0
+```
+
 
 ### 5. Database Setup
 
@@ -66,6 +73,32 @@ python manage.py migrate
 
 This will create a SQLite database (`db.sqlite3`) with all necessary tables.
 
+### 6. Start Redis (Required for Scheduling)
+
+Post scheduling uses Celery. Celery requires Redis as broker.
+
+**Option A — Redis installed locally:**
+
+```cmd
+redis-server
+```
+
+**Option B — Redis with Docker:**
+
+```cmd
+docker run --name smm-redis -p 6379:6379 -d redis:7
+```
+
+### 7. Start Celery Worker
+
+Open a new terminal in project root (`server/`) with virtualenv activated:
+
+```cmd
+celery -A server worker -l info -P solo
+```
+
+> On Windows, `-P solo` is recommended for compatibility.
+
 ### 8. Run the Development Server
 
 Start the Django development server:
@@ -75,6 +108,12 @@ python manage.py runserver
 ```
 
 The server will start at `http://localhost:8000/`
+
+For scheduling to work, keep all three running:
+
+1. Redis
+2. Celery worker
+3. Django server
 
 ## Project Structure
 

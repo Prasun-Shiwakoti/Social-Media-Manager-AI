@@ -12,7 +12,6 @@ COMMON_API_TOKEN = settings.COMMON_IG_ACCESS_TOKEN
 @shared_task
 def handle_message_webhook(payload):
     try:
-        
         sender = payload['entry'][0]['messaging'][0]['sender']['id']
         recepient = payload['entry'][0]['messaging'][0]['recipient']['id']
         message = payload['entry'][0]['messaging'][0]['message']['text']
@@ -41,6 +40,7 @@ def handle_message_webhook(payload):
                     business_id=recepient_account.business_account_id
                 )
                 print(f"Generated reply: {reply_message}")
+                print(f"\nSending reply to {sender_username} for message: {message}")
                 success = reply_to_message(
                     recipient_id=sender,  # Replying to the sender
                     message=reply_message,
