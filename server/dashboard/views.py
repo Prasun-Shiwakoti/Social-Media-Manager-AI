@@ -1,3 +1,4 @@
+import os
 import pytz
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.response import Response
@@ -16,6 +17,11 @@ import server.utils.instagram_api as insta_api
 from io import BytesIO
 from datetime import datetime
 from django.core.files.base import ContentFile
+
+# Set PUBLIC_MEDIA_HOST in your .env to the publicly reachable base URL of your server.
+# e.g. PUBLIC_MEDIA_HOST=https://abc123.ngrok-free.app
+# Instagram cannot reach localhost URLs, so this is REQUIRED for posting to work.
+PUBLIC_MEDIA_HOST = os.getenv('PUBLIC_MEDIA_HOST', '').rstrip('/')
 
 
 @api_view(['POST'])
@@ -147,8 +153,14 @@ def publish_post(request):
         caption = request.data.get('caption', None)
         image_url = request.data.get('image_url', None)   
         image = request.FILES.get('image', None)
-        scheduled_time = request.data.get('scheduled_time', None) # ISO format string, e.g. "2024-12-31T23:59:00Z"
-        scheduled_time = datetime.fromisoformat(scheduled_time) if scheduled_time else None
+        scheduled_time_raw = request.data.get('scheduled_time', None)
+        # Guard: treat empty string as None to avoid fromisoformat crash
+        scheduled_time = None
+        if scheduled_time_raw and str(scheduled_time_raw).strip():
+            try:
+                scheduled_time = datetime.fromisoformat(str(scheduled_time_raw).strip())
+            except ValueError:
+                return Response({'error': f'Invalid scheduled_time format: {scheduled_time_raw}'}, status=400)
         print("Before converting to UTC:", scheduled_time)
         #convert from local to utc
         if scheduled_time:

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { Wand2, Image as ImageIcon, Copy, RefreshCw, Download, Send, Calendar as CalendarIcon } from "lucide-react";
+import { Wand2, Image as ImageIcon, Copy, RefreshCw, Download, Send, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,8 @@ export default function AICreator() {
     const token = useSelector((state) => state.auth.token);
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isPosting, setIsPosting] = useState(false);
+    const [isScheduling, setIsScheduling] = useState(false);
     const [generatedImages, setGeneratedImages] = useState([]);
     const [caption, setCaption] = useState("This is a caption");
     const [date, setDate] = useState();
@@ -64,6 +66,7 @@ export default function AICreator() {
             return;
         }
 
+        setIsPosting(true);
         try {
             const formData = new FormData();
             formData.append("caption", caption);
@@ -82,12 +85,44 @@ export default function AICreator() {
         } catch (err) {
             console.error(err);
             alert("Failed to post content.");
+        } finally {
+            setIsPosting(false);
         }
     };
 
-    const handleSchedule = () => {
-        if (!date) return;
-        alert(`Scheduled for ${format(date, "PPP")}`);
+    const handleSchedule = async () => {
+        if (!date) {
+            alert("Please pick a date first.");
+            return;
+        }
+        if (!caption) {
+            alert("Please generate a caption first.");
+            return;
+        }
+
+        setIsScheduling(true);
+        try {
+            const formData = new FormData();
+            formData.append("caption", caption);
+            formData.append("image_url", "https://ectodermal-blondell-unmarred.ngrok-free.dev" + generatedImages[0]);
+            formData.append("scheduled_time", date.toISOString());
+
+            const res = await axios.post("/api/dashboard/publish_post/", formData, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            if (res.status === 200) {
+                alert(`Post scheduled successfully for ${format(date, "PPP")}!`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to schedule content.");
+        } finally {
+            setIsScheduling(false);
+        }
     };
 
     return (
@@ -194,9 +229,9 @@ export default function AICreator() {
                                     </div>
 
                                     <div className="flex flex-col gap-3 pt-4 border-t">
-                                        <Button className="w-full" size="lg" onClick={handlePostNow}>
-                                            <Send className="mr-2 h-4 w-4" />
-                                            Post Now
+                                        <Button className="w-full" size="lg" onClick={handlePostNow} disabled={isPosting}>
+                                            {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                            {isPosting ? "Posting..." : "Post Now"}
                                         </Button>
 
                                         <div className="flex gap-2">
@@ -216,8 +251,9 @@ export default function AICreator() {
                                                     />
                                                 </PopoverContent>
                                             </Popover>
-                                            <Button variant="secondary" onClick={handleSchedule} disabled={!date}>
-                                                Schedule
+                                            <Button variant="secondary" onClick={handleSchedule} disabled={!date || isScheduling}>
+                                                {isScheduling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                {isScheduling ? "Scheduling..." : "Schedule"}
                                             </Button>
                                         </div>
                                     </div>

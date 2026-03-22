@@ -366,32 +366,15 @@ def get_all_instagram_user_insights(
     api_version: str = API_VERSION,
 ) -> list[Dict[str, Any]]:
     """
-    Fetches all possible Instagram User Insights
-    with correct metric–period mappings.
+    Fetches Instagram User Insights using two separate requests:
+      1. Time-series metrics (reach, follower_count, profile_views, etc.) — metric_type=time_series
+      2. Engagement totals (likes, comments, shares, saves, etc.)         — metric_type=total_value
 
-    Parameters
-    ----------
-    user_id : str | None
-        Instagram Business or Creator Account ID
-    access_token : str
-        Valid Instagram Graph API access token
-    since : str | None
-        ISO date (YYYY-MM-DD) for day-based metrics
-    until : str | None
-        ISO date (YYYY-MM-DD) for day-based metrics
-    period : str | None
-        Period for the insights (default is "day")
-
-    Returns
-    -------
-    list[Dict[str, Any]]
-        List of Instagram User Insights data
+    The Instagram API requires different metric_type values for these groups
+    and does not allow them in a single request. Threads-only metrics are
+    excluded because they cause the entire request to fail for non-Threads accounts.
     """
-
-    metrics = ["reach", "follower_count", "website_clicks", "profile_views", "online_followers", "accounts_engaged", "total_interactions", "likes", "comments", "shares", "saves", "replies", "engaged_audience_demographics", "reached_audience_demographics", "follower_demographics", "follows_and_unfollows", "profile_links_taps", "views", "threads_likes", "threads_replies", "reposts", "quotes", "threads_followers", "threads_follower_demographics", "content_views", "threads_views", "threads_clicks", "threads_reposts"]
-
     url = f"{HOST_URL}{api_version}/{user_id}/insights"
-
     results: list[Dict[str, Any]] = []
 
     if not until:
@@ -400,32 +383,53 @@ def get_all_instagram_user_insights(
         since_date = datetime.now().date() - timedelta(days=7)
         since = since_date.isoformat()
 
-    if  datetime.fromisoformat(until) - datetime.fromisoformat(since) >= timedelta(days=730):
-        logger.warning("  The maximum allowed range between 'since' and 'until' is 730 days. Adjusting 'since' accordingly.")
+    if datetime.fromisoformat(until) - datetime.fromisoformat(since) >= timedelta(days=730):
+        logger.warning("Max range is 730 days. Adjusting 'since' to 7 days before 'until'.")
         since_date = datetime.fromisoformat(until) - timedelta(days=7)
         since = since_date.date().isoformat()
-    
-    params = {
-        "metric": ",".join(metrics),
+
+    # ── 1. Time-series metrics (returns values: [{value, end_time}, ...]) ──
+    time_series_metrics = ["reach", "follower_count", "profile_views", "website_clicks", "views"]
+    params_ts = {
+        "metric": ",".join(time_series_metrics),
         "period": period,
+        "metric_type": "time_series",
         "since": since,
         "until": until,
         "access_token": access_token,
     }
-    
-    response = requests.get(url, params=params)
-    data = response.json()
+    resp_ts = requests.get(url, params=params_ts)
+    if resp_ts.status_code == 200:
+        for metric_data in resp_ts.json().get("data", []):
+            metric_name = metric_data.get("name")
+            if metric_name:
+                results.append({metric_name: metric_data})
+    else:
+        logger.error(f"Error fetching time-series insights: {resp_ts.status_code} - {resp_ts.text}")
 
-    if response.status_code != 200:
-        logger.error(f'Error fetching insights: {response.status_code} - {response.text}')
-        return results
+    # ── 2. Engagement total_value metrics (returns total_value: {value: N}) ─
+    total_value_metrics = [
+        "likes", "comments", "shares", "saves", "replies",
+        "accounts_engaged", "total_interactions",
+        "profile_links_taps", "follows_and_unfollows",
+    ]
+    params_tv = {
+        "metric": ",".join(total_value_metrics),
+        "period": "day",
+        "metric_type": "total_value",
+        "since": since,
+        "until": until,
+        "access_token": access_token,
+    }
+    resp_tv = requests.get(url, params=params_tv)
+    if resp_tv.status_code == 200:
+        for metric_data in resp_tv.json().get("data", []):
+            metric_name = metric_data.get("name")
+            if metric_name:
+                results.append({metric_name: metric_data})
+    else:
+        logger.error(f"Error fetching total_value insights: {resp_tv.status_code} - {resp_tv.text}")
 
-    for metric_data in data.get("data", []):
-        metric_name = metric_data.get("name")
-        if metric_name:
-            results.append({
-                metric_name: metric_data
-            })
-        
     return results
+
 

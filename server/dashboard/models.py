@@ -1,3 +1,4 @@
+import os
 from django.utils import timezone
 from django.db import models
 from account.models import IGBusinessAccount
@@ -6,6 +7,10 @@ from server.utils.instagram_api import create_and_publish_post
 from server.utils.logger import logger
 import threading
 import time
+
+# Must be a publicly reachable URL (e.g., your ngrok tunnel).
+# Instagram cannot download images from localhost.
+PUBLIC_MEDIA_HOST = os.getenv('PUBLIC_MEDIA_HOST', '').rstrip('/')
 
 def delayed_publish(absolute_url, caption, access_token, business_account_id, post_id, scheduled_time):
     wait_time = (scheduled_time - timezone.now()).total_seconds()
@@ -45,7 +50,13 @@ class InstagramPost(models.Model):
     def publish_to_instagram(self, request):
         if self.media and not self.is_posted:
             if self.media.image:
-                absolute_url = request.build_absolute_uri(self.media.image.url)
+                if not PUBLIC_MEDIA_HOST:
+                    raise ValueError(
+                        "PUBLIC_MEDIA_HOST is not set in .env. "
+                        "Instagram cannot download images from localhost. "
+                        "Set PUBLIC_MEDIA_HOST to your public server URL (e.g. your ngrok URL)."
+                    )
+                absolute_url = f"{PUBLIC_MEDIA_HOST}{self.media.image.url}"
             else:
                 absolute_url = self.media.image_url
 
