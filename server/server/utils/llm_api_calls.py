@@ -11,10 +11,10 @@ load_dotenv()
 # 1. Setup clients
 # -------------------------------------------------------------------
 HF_KEY = os.getenv("HF_API_KEY")
-
+print("HF_KEY:", HF_KEY)  # Debugging line to check if the key is loaded correctly
 # Initialize inference client (used for all API calls)
 inference_client = InferenceClient(
-    api_key=HF_KEY
+    api_key=HF_KEY,
 )
 
 # -------------------------------------------------------------------
@@ -36,8 +36,6 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
         messages[-1]["content"] += f"\nHowever dont make it somewhat like this : {expanded_prompt}. \nI need a better version of this."
 
 
-    
-
     response = inference_client.chat.completions.create(
         model="meta-llama/Llama-3.3-70B-Instruct",
         messages=messages,
@@ -55,7 +53,7 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
 def generate_image(expanded_prompt: str) -> Image.Image:
 
     client = InferenceClient(
-        provider="together",
+        provider="replicate",
         api_key=HF_KEY,
     )
 
@@ -96,3 +94,16 @@ def generate_caption(expanded_prompt: str, old_caption=None) -> str:
     return response.choices[0].message["content"].strip()
 
 
+if __name__ == "__main__":
+    # Example usage
+    short_prompt = "A advertisement poster for a shoes sale, with the text '50% OFF' on sports shoes and '30% OFF' on formal shoes prominently displayed."
+
+    # print("\n\nExpanding prompt...")
+    expanded = expand_prompt(short_prompt)
+    print("\n\nExpanded Prompt:", expanded)
+
+    # img = generate_image(expanded)
+    # img.show()
+
+    # caption = generate_caption(expanded)
+    # print("\n\nGenerated Caption:", caption)
