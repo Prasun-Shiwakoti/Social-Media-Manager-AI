@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
+    Grid,
     PenTool,
     BarChart3,
     MessageSquare,
@@ -16,6 +17,7 @@ import { logout } from "@/redux/authSlice";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: Grid, label: "Posts", path: "/posts" },
     { icon: PenTool, label: "AI Creator", path: "/create" },
     { icon: BarChart3, label: "Analytics", path: "/analytics" },
     { icon: MessageSquare, label: "Comments", path: "/comments" },

@@ -264,3 +264,5 @@ celerybeat.pid
 
 
 models/
+chroma/
+venv/

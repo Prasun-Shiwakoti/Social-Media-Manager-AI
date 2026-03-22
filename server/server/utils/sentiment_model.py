@@ -61,7 +61,7 @@ def clean_text(text: str) -> str:
 
 def load_model_and_tokenizer(model_path: str = None, tokenizer_path: str = None):
     """
-    Loads the trained CNN-BiLSTM model and tokenizer from disk.
+    Loads the trained LSTM model and tokenizer from disk.
     Uses global caching to avoid reloading on every prediction.
     
     Args:

@@ -1,10 +1,11 @@
-from account.models import IGBusinessAccount
+import pytz
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 
 
+from account.models import IGBusinessAccount
 from .models import PostImage, InstagramPost 
 from server.utils.logger import logger
 from server.utils.llm_api_calls import expand_prompt, generate_image as generate_image_ai, generate_caption as generate_caption_ai
@@ -13,6 +14,7 @@ import server.utils.instagram_api as insta_api
 
 
 from io import BytesIO
+from datetime import datetime
 from django.core.files.base import ContentFile
 
 
@@ -145,6 +147,13 @@ def publish_post(request):
         caption = request.data.get('caption', None)
         image_url = request.data.get('image_url', None)   
         image = request.FILES.get('image', None)
+        scheduled_time = request.data.get('scheduled_time', None) # ISO format string, e.g. "2024-12-31T23:59:00Z"
+        scheduled_time = datetime.fromisoformat(scheduled_time) if scheduled_time else None
+        print("Before converting to UTC:", scheduled_time)
+        #convert from local to utc
+        scheduled_time = scheduled_time.astimezone(pytz.UTC)
+        print("After converting to UTC:", scheduled_time)
+
 
         if image:
             post_image = PostImage.objects.create(image=image)
@@ -157,11 +166,13 @@ def publish_post(request):
         post = InstagramPost.objects.create(
             business_account=business_account,
             caption=caption,
-            media=post_image
+            media=post_image,
+            scheduled_time=scheduled_time
         )
         post_link, media_id = post.publish_to_instagram(request=request)
 
-        logger.info(f"Published post {media_id} to Instagram")
+        if post_link == -1:
+            return Response({'message': 'Post scheduled successfully', 'scheduled_time': scheduled_time}, status=200)
 
         return Response({'message': 'Post published successfully', 'post_link': post_link, 'media_id': media_id}, status=200)
 

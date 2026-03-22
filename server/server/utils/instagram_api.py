@@ -1,6 +1,7 @@
 import os
 
-from traitlets import Any
+from celery import shared_task
+
 from .logger import logger
 import requests
 
@@ -115,7 +116,7 @@ def create_and_publish_post(image_url: str, caption: str, access_token: str, bus
             if permalink:
                 logger.info(f'Post published successfully! View it at: {permalink}')
                 return permalink, media_id
-    return None
+    return None, None
 
 
 def fetch_long_lived_token(code: str, api_version: str = API_VERSION) -> str:

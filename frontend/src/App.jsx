@@ -15,6 +15,8 @@ import BusinessSetup from "@/pages/auth/BusinessSetup";
 import LandingPage from "@/pages/LandingPage";
 import Scheduler from "@/pages/features/Scheduler";
 import SentimentAnalysis from "./pages/features/SentimentAnalysis";
+import Posts from "@/pages/features/Posts";
+import PostDetail from "@/pages/features/PostDetail";
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/posts" element={<Posts />} />
+            <Route path="/posts/:id" element={<PostDetail />} />
             <Route path="/create" element={<AICreator />} />
             <Route path="/schedule" element={<Scheduler />} />
             <Route path="/analytics" element={<Analytics />} />
