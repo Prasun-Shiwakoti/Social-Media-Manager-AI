@@ -47,8 +47,13 @@ export default function Dashboard() {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const sinceStr = thirtyDaysAgo.toISOString().split('T')[0];
+                const untilStr = new Date().toISOString().split('T')[0];
+
                 // Fetch Insights
-                const insightsRes = await axios.get('/api/dashboard/instagram/insights/', {
+                const insightsRes = await axios.get(`/api/dashboard/instagram/insights/?since=${sinceStr}&until=${untilStr}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -86,17 +91,23 @@ export default function Dashboard() {
 
                 const profileData = profileRes.data.profile;
 
-                // Help function to get latest value from insights
+                // Help function to get latest/summed values from insights
                 const latestVal = (key) => {
                     const vals = metrics[key] || [];
                     if (vals.length === 0) return 0;
                     return vals[vals.length - 1].value ?? 0;
                 };
 
+                const sumVal = (key) => {
+                    const vals = metrics[key] || [];
+                    if (vals.length === 0) return 0;
+                    return vals.reduce((sum, v) => sum + (v.value ?? 0), 0);
+                };
+
                 // Aggregated data
                 const totalLikes = allFetchedPosts.reduce((sum, p) => sum + (p.like_count ?? 0), 0);
                 const statFollowers = profileData?.followers_count ?? latestVal('follower_count') ?? 0;
-                const statReach = latestVal('reach') ?? 0;
+                const statReach = sumVal('reach') ?? 0;
 
                 setStats([
                     {

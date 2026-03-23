@@ -43,8 +43,13 @@ export default function Analytics() {
             setLoading(true);
             setError(null);
             try {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const since = thirtyDaysAgo.toISOString().split('T')[0];
+                const until = new Date().toISOString().split('T')[0];
+
                 const [insightRes, postsRes, profileRes] = await Promise.all([
-                    axios.get('/api/dashboard/instagram/insights/', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get(`/api/dashboard/instagram/insights/?since=${since}&until=${until}`, { headers: { Authorization: `Bearer ${token}` } }),
                     axios.get('/api/dashboard/instagram/posts/', { headers: { Authorization: `Bearer ${token}` } }),
                     axios.get('/api/dashboard/instagram/profile/', { headers: { Authorization: `Bearer ${token}` } }),
                 ]);
@@ -167,6 +172,12 @@ export default function Analytics() {
         </div>
     );
 
+    const sumVal = (key) => {
+        const arr = insights?.[key];
+        if (!arr || arr.length === 0) return null;
+        return arr.reduce((sum, v) => sum + (v.value ?? 0), 0);
+    };
+
     // Use real-time profile counts for stat cards (most accurate)
     const statFollowers = profile?.followers_count ?? latestVal("follower_count") ?? 0;
     const statMediaCount = profile?.media_count ?? 0;
@@ -175,11 +186,11 @@ export default function Analytics() {
     const totalLikesFromPosts = posts.reduce((sum, post) => sum + (post.like_count ?? 0), 0);
     const totalCommentsFromPosts = posts.reduce((sum, post) => sum + (post.comments_count ?? 0), 0);
 
-    const statReach = latestVal("reach") ?? 0;
-    const statLikes = latestVal("likes") ?? totalLikesFromPosts;
-    const statComments = latestVal("comments") ?? totalCommentsFromPosts;
-    const statShares = latestVal("shares") ?? 0;
-    const statSaves = latestVal("saves") ?? 0;
+    const statReach = sumVal("reach") ?? 0;
+    const statLikes = sumVal("likes") ?? totalLikesFromPosts;
+    const statComments = sumVal("comments") ?? totalCommentsFromPosts;
+    const statShares = sumVal("shares") ?? 0;
+    const statSaves = sumVal("saves") ?? 0;
 
     return (
         <div className="space-y-8">
