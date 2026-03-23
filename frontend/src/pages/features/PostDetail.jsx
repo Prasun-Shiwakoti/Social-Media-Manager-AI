@@ -76,7 +76,6 @@ export default function PostDetail() {
             const commentsToAnalyze = comments.slice(0, 20);
             const results = {
                 POSITIVE: 0,
-                NEUTRAL: 0,
                 NEGATIVE: 0,
                 total: commentsToAnalyze.length
             };
@@ -320,19 +319,6 @@ export default function PostDetail() {
                                             </div>
                                         </div>
                                         
-                                        {/* Neutral */}
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="flex items-center gap-2 font-medium text-blue-600 dark:text-blue-400">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                                    Neutral
-                                                </span>
-                                                <span className="font-semibold">{sentimentResults.NEUTRAL}</span>
-                                            </div>
-                                            <div className="w-full h-2 overflow-hidden rounded-full bg-secondary">
-                                                <div className="h-full bg-blue-500" style={{ width: `${(sentimentResults.NEUTRAL / sentimentResults.total) * 100 || 0}%` }} />
-                                            </div>
-                                        </div>
                                         
                                         {/* Negative */}
                                         <div className="space-y-2">

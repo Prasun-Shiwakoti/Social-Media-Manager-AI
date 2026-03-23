@@ -203,7 +203,7 @@ export default function SentimentAnalysis() {
           <Card>
             <CardHeader>
               <CardTitle>Sentiment Distribution</CardTitle>
-              <CardDescription>Probability breakdown across all sentiment classes</CardDescription>
+              <CardDescription>Probability breakdown between Positive and Negative sentiment</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Pie Chart */}
