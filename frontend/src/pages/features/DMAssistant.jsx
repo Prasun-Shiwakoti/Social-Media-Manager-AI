@@ -57,10 +57,10 @@ export default function DMAssistant() {
         }
     };
 
-    const fetchMessages = async (threadId) => {
+    const fetchMessages = async (threadId, silent = false) => {
         if (!token || !threadId) return;
         try {
-            setLoadingMessages(true);
+            if (!silent) setLoadingMessages(true);
             const res = await axios.get(`/api/dashboard/instagram/conversations/${threadId}/messages/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -68,7 +68,14 @@ export default function DMAssistant() {
         } catch (err) {
             console.error("Error fetching messages:", err);
         } finally {
-            setLoadingMessages(false);
+            if (!silent) setLoadingMessages(false);
+        }
+    };
+
+    const handleRefresh = () => {
+        fetchThreads();
+        if (selectedThread) {
+            fetchMessages(selectedThread.id, false); // Manual refresh should show loading spinner
         }
     };
 
@@ -103,8 +110,8 @@ export default function DMAssistant() {
                 { message: messageText },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Re-fetch to get real ID and sync
-            fetchMessages(selectedThread.id);
+            // Silent Re-fetch to get real ID and sync without jarring reload
+            fetchMessages(selectedThread.id, true);
         } catch (err) {
             console.error("Error sending message:", err);
             // Optionally remove the optimistic message on failure
@@ -134,7 +141,7 @@ export default function DMAssistant() {
                     <h2 className="text-3xl font-bold tracking-tight">DM Assistant</h2>
                     <p className="text-muted-foreground">Real-time audience conversations across platforms.</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={fetchThreads} disabled={loading}>
+                <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
             </div>

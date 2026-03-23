@@ -306,9 +306,27 @@ def get_instagram_post_comments(request, media_id):
         custom_user = request.user.customuser
         business_account = IGBusinessAccount.objects.get(custom_user=custom_user)
         access_token = business_account.access_token.access_token
+        raw_comments = insta_api.fetch_comments(media_id, access_token)
+        
+        normalized = []
+        for x in raw_comments:
+            # Try top-level username, then from.username, then from.name, then from.id, finally "Audience Member"
+            from_obj = x.get('from', {}) or {}
+            uname = (
+                x.get('username') or 
+                from_obj.get('username') or 
+                from_obj.get('name') or 
+                from_obj.get('id') or
+                "Audience Member"
+            )
+            normalized.append({
+                'id': x.get('id'),
+                'text': x.get('text'),
+                'username': uname,
+                'timestamp': x.get('timestamp')
+            })
 
-        comments = insta_api.fetch_comments(media_id, access_token)
-        return Response({'comments': comments}, status=200)
+        return Response({'comments': normalized}, status=200)
     
     except IGBusinessAccount.DoesNotExist:
         return Response({'error': 'Instagram Business Account not found'}, status=404)

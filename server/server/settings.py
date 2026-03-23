@@ -64,7 +64,7 @@ CHUNK_SIZE = 200
 CHUNK_OVERLAP = 50
 
 TOP_K = 5
-DISTANCE_THRESHOLD = 1
+DISTANCE_THRESHOLD = 10
 
 LLM_INSTRUCTION = """
 You are a business auto-reply assistant.

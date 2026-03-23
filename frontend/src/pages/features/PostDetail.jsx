@@ -21,6 +21,7 @@ export default function PostDetail() {
     // Sentiment Analysis State
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [sentimentResults, setSentimentResults] = useState(null);
+    const [commentSentiments, setCommentSentiments] = useState({}); // {commentId: sentiment}
 
     useEffect(() => {
         const fetchPostData = async () => {
@@ -65,11 +66,24 @@ export default function PostDetail() {
         fetchPostData();
     }, [id, token]);
 
+    const getCommenterName = (comment) => {
+        return comment.username || "Audience Member";
+    };
+
+    const getSentimentVariant = (sentiment) => {
+        if (!sentiment) return "outline";
+        const s = sentiment.toUpperCase();
+        if (s === 'POSITIVE') return "success";
+        if (s === 'NEGATIVE') return "destructive";
+        return "outline";
+    };
+
     const handleAnalyzeSentiment = async () => {
         if (!comments || comments.length === 0) return;
         
         setIsAnalyzing(true);
         setSentimentResults(null);
+        setCommentSentiments({});
 
         try {
             // Take up to 20 comments for analysis to avoid overloading API in MVP
@@ -79,6 +93,8 @@ export default function PostDetail() {
                 NEGATIVE: 0,
                 total: commentsToAnalyze.length
             };
+
+            const individualResults = {};
 
             // Call API for each comment
             const promises = commentsToAnalyze.map(async (comment) => {
@@ -92,6 +108,7 @@ export default function PostDetail() {
                     const score = res.data.sentiment_score?.sentiment;
                     if (score) {
                         const upperScore = score.toUpperCase();
+                        individualResults[comment.id] = upperScore;
                         if (results[upperScore] !== undefined) {
                             results[upperScore]++;
                         }
@@ -102,6 +119,7 @@ export default function PostDetail() {
             });
 
             await Promise.all(promises);
+            setCommentSentiments(individualResults);
             setSentimentResults(results);
 
         } catch (err) {
@@ -247,16 +265,23 @@ export default function PostDetail() {
                                         <div key={comment.id || idx} className="flex gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors">
                                             <Avatar className="h-9 w-9 border border-border">
                                                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                                    {(comment.username || "U")[0].toUpperCase()}
+                                                    {getCommenterName(comment)[0].toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-semibold">{comment.username || "User"}</span>
-                                                    {comment.timestamp && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {new Date(comment.timestamp).toLocaleDateString()}
-                                                        </span>
+                                            <div className="space-y-1 flex-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold">{getCommenterName(comment)}</span>
+                                                        {comment.timestamp && (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {new Date(comment.timestamp).toLocaleDateString()}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {commentSentiments[comment.id] && (
+                                                        <Badge variant={getSentimentVariant(commentSentiments[comment.id])} className="text-[10px] h-4 py-0">
+                                                            {commentSentiments[comment.id]}
+                                                        </Badge>
                                                     )}
                                                 </div>
                                                 <p className="text-sm text-foreground/90">{comment.text}</p>

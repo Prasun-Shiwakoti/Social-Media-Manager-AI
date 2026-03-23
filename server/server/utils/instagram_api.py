@@ -199,7 +199,7 @@ def fetch_post_details(media_id: str, access_token: str, api_version: str = API_
 def fetch_comments(media_id: str, access_token: str, api_version: str = API_VERSION):
     url = f'{HOST_URL}{api_version}/{media_id}/comments'
     params = {
-        'fields': 'id,text,username,timestamp',
+        'fields': 'id,text,username,timestamp,from',
         'access_token': access_token
     }
 
