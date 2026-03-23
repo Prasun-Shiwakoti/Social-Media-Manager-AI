@@ -6,6 +6,8 @@ import os
 from typing import Dict, Union, List
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from .nepali_translate import compile_raw_to_english
+
 
 # Paths (relative to this file)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -124,6 +126,10 @@ def preprocess_text_for_inference(text: str, tokenizer=None, max_len: int = MAX_
     if tokenizer is None:
         _, tokenizer = load_model_and_tokenizer()
     
+    # translate raw text to english
+    text = compile_raw_to_english(text)
+
+
     # Clean text
     cleaned = clean_text(text)
     

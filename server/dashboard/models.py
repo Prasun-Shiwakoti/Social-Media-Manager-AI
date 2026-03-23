@@ -1,5 +1,7 @@
 from django.utils import timezone
 from django.db import models
+from rest_framework_simplejwt import settings
+from django.conf import settings
 from account.models import IGBusinessAccount
 from dashboard.tasks import schedule_post
 from server.utils.instagram_api import create_and_publish_post
@@ -37,7 +39,7 @@ class InstagramPost(models.Model):
             if self.media.image:
                 absolute_url = request.build_absolute_uri(self.media.image.url)
                 absolute_url = settings.PUBLIC_URL + self.media.image.url
-                print("Absolute URL:", absolute_url)
+                # print("Absolute URL:", absolute_url)
             else:
                 absolute_url = self.media.image_url
 

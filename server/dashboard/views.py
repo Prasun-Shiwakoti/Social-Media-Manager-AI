@@ -156,7 +156,6 @@ def publish_post(request):
             scheduled_time = scheduled_time.astimezone(pytz.UTC)
         print("After converting to UTC:", scheduled_time)
 
-
         if image:
             post_image = PostImage.objects.create(image=image)
         elif image_url:
