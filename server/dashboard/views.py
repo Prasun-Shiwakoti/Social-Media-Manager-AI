@@ -440,9 +440,12 @@ def get_instagram_conversation_messages(request, conversation_id):
             after=after,
         )
 
-        if data is None:
-            return Response({'error': 'Failed to fetch conversation messages from Instagram API'}, status=502)
+        me = insta_api.fetch_business_account(access_token)
 
+        if data is None or me is None:
+            return Response({'error': 'Failed to fetch data from Instagram API'}, status=502)
+
+        my_username = me.get('username')
         raw_messages = data.get('data', [])
         normalized_messages = []
 
@@ -451,7 +454,7 @@ def get_instagram_conversation_messages(request, conversation_id):
             to_data = (message.get('to', {}) or {}).get('data', [])
 
             direction = 'incoming'
-            if str(from_user.get('id')) == str(business_account_id):
+            if str(from_user.get('username')) == str(my_username):
                 direction = 'outgoing'
 
             normalized_messages.append(
@@ -467,6 +470,9 @@ def get_instagram_conversation_messages(request, conversation_id):
                     'to': to_data,
                 }
             )
+
+        # Reverse to show in chronological order (oldest to newest)
+        normalized_messages.reverse()
 
         paging = data.get('paging', {})
 

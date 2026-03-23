@@ -163,21 +163,30 @@ class BusinessRAGPipeline:
             logger.error(f"Error generating answer: {e}")
             return settings.FALLBACK_MESSAGE
         
-    def answer(self, business_id: str, query: str) -> str:
+    def answer(self, business_id: str, query: str, retry_count: int = 0) -> str:
         query = compile_raw_to_english(query)
-        err=0
         try:
             retrieved_docs = self.retrieve(business_id, query)
             if not retrieved_docs:
-                err = 1
-                logger.info("No relevant documents found. Returning fallback message.")
-                business_acc = IGBusinessAccount.objects.filter(business_account_id=business_id).first()
-                rag_pipeline.ingest_business(str(business_id), business_acc.description, True)
+                if retry_count >= 1:
+                    logger.info(f"No documents found for business '{business_id}' after retry.")
+                    return settings.FALLBACK_MESSAGE
 
-                return self.answer(business_id, query) if err == 1 else settings.FALLBACK_MESSAGE
+                logger.info(f"No relevant documents found for business '{business_id}'. Attempting re-ingestion.")
+                
+                # Safety check for business account
+                business_acc = IGBusinessAccount.objects.filter(business_account_id=business_id).first()
+                if not business_acc or not getattr(business_acc, 'description', None):
+                    logger.warning(f"Business account '{business_id}' not found or has no description.")
+                    return settings.FALLBACK_MESSAGE
+                
+                # Re-ingest
+                self.ingest_business(str(business_id), business_acc.description, force_recreate=True)
+                
+                # Recursive call with incremented retry count
+                return self.answer(business_id, query, retry_count=retry_count + 1)
             
             return self.generate_answer(query, retrieved_docs)
-        
 
         except Exception as e:
             logger.error(f"Error in answer pipeline: {e}")
