@@ -1,12 +1,11 @@
 from django.utils import timezone
 from django.db import models
+from rest_framework_simplejwt import settings
+from django.conf import settings
 from account.models import IGBusinessAccount
 from dashboard.tasks import schedule_post
 from server.utils.instagram_api import create_and_publish_post
 from server.utils.logger import logger
-<<<<<<< HEAD
-=======
-import threading
 import time
 
 def delayed_publish(absolute_url, caption, access_token, business_account_id, post_id, scheduled_time):
@@ -17,7 +16,6 @@ def delayed_publish(absolute_url, caption, access_token, business_account_id, po
     # Call the task synchronously
     schedule_post(absolute_url, caption, access_token, business_account_id, post_id)
 
->>>>>>> main
 
 
 # Create your models here.
@@ -49,35 +47,17 @@ class InstagramPost(models.Model):
         if self.media and not self.is_posted:
             if self.media.image:
                 absolute_url = request.build_absolute_uri(self.media.image.url)
+                # absolute_url = settings.PUBLIC_URL + self.media.image.url
             else:
                 absolute_url = self.media.image_url
 
             if self.scheduled_time and self.scheduled_time > timezone.now():
-<<<<<<< HEAD
                 celery_id = schedule_post.apply_async(
                     args=[absolute_url, self.caption, self.business_account.access_token.access_token, self.business_account.business_account_id, self.id],
                     eta=self.scheduled_time
                 )
                 logger.info(f"Post {self.id} scheduled with Celery task ID: {celery_id}")
                 print(f"Post {self.id} scheduled with Celery task ID: {celery_id}")
-=======
-                thread = threading.Thread(
-                    target=delayed_publish,
-                    args=(
-                        absolute_url, 
-                        self.caption, 
-                        self.business_account.access_token.access_token, 
-                        self.business_account.business_account_id, 
-                        self.id, 
-                        self.scheduled_time
-                    )
-                )
-                thread.daemon = True
-                thread.start()
-                
-                logger.info(f"Post {self.id} scheduled locally to post at {self.scheduled_time}")
-                print(f"Post {self.id} scheduled locally via daemon thread.")
->>>>>>> main
                 return -1, -1  # Indicate that the post is scheduled but not yet published
             else:
                 post_link, media_id = create_and_publish_post(
