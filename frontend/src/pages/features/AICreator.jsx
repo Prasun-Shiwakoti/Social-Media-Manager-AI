@@ -22,7 +22,10 @@ export default function AICreator() {
     const [generatedImages, setGeneratedImages] = useState([]);
     const [caption, setCaption] = useState("This is a caption");
     const [date, setDate] = useState();
+    const [time, setTime] = useState("12:00");
     const [error, setError] = useState();
+    const [isScheduling, setIsScheduling] = useState(false);
+    const [isPosting, setIsPosting] = useState(false);
 
     const handleGenerate = async () => {
         setIsGenerating(true);
@@ -64,10 +67,11 @@ export default function AICreator() {
             return;
         }
 
+        setIsPosting(true);
         try {
             const formData = new FormData();
             formData.append("caption", caption);
-            formData.append("image_url", "https://ectodermal-blondell-unmarred.ngrok-free.dev" + generatedImages[0]);
+            formData.append("image_url", "https://yuonne-unrotary-jedidiah.ngrok-free.dev/" + generatedImages[0]);
 
             const res = await axios.post("/api/dashboard/publish_post/", formData, {
                 headers: {
@@ -82,12 +86,58 @@ export default function AICreator() {
         } catch (err) {
             console.error(err);
             alert("Failed to post content.");
+        } finally {
+            setIsPosting(false);
         }
     };
 
-    const handleSchedule = () => {
-        if (!date) return;
-        alert(`Scheduled for ${format(date, "PPP")}`);
+    const handleSchedule = async () => {
+        if (!date || !time || !caption || !generatedImages[0]) {
+            alert("Please ensure image, caption, date, and time are provided.");
+            return;
+        }
+
+        setIsScheduling(true);
+        try {
+            // Combine date and time
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const [hours, minutes] = time.split(':');
+            
+            // Get local timezone offset (e.g., +05:45)
+            const offsetMinutes = -new Date().getTimezoneOffset();
+            const sign = offsetMinutes >= 0 ? '+' : '-';
+            const absOffset = Math.abs(offsetMinutes);
+            const offsetH = String(Math.floor(absOffset / 60)).padStart(2, '0');
+            const offsetM = String(absOffset % 60).padStart(2, '0');
+            const timezoneOffset = `${sign}${offsetH}:${offsetM}`;
+
+            // Format: 2026-03-22T15:00:00+05:45
+            const scheduledTime = `${year}-${month}-${day}T${hours}:${minutes}:00${timezoneOffset}`;
+
+            const formData = new FormData();
+            formData.append("caption", caption);
+            formData.append("image_url", "https://yuonne-unrotary-jedidiah.ngrok-free.dev/" + generatedImages[0]);
+            formData.append("scheduled_time", scheduledTime);
+
+            const res = await axios.post("/api/dashboard/publish_post/", formData, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            if (res.status === 200) {
+                alert(`Post scheduled successfully for ${format(date, "PPP")} at ${time}`);
+                setDate(undefined);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Failed to schedule post.");
+        } finally {
+            setIsScheduling(false);
+        }
     };
 
     return (
@@ -194,31 +244,62 @@ export default function AICreator() {
                                     </div>
 
                                     <div className="flex flex-col gap-3 pt-4 border-t">
-                                        <Button className="w-full" size="lg" onClick={handlePostNow}>
-                                            <Send className="mr-2 h-4 w-4" />
-                                            Post Now
+                                        <Button className="w-full" size="lg" onClick={handlePostNow} disabled={isPosting}>
+                                            {isPosting ? (
+                                                <>
+                                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                                    Posting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Send className="mr-2 h-4 w-4" />
+                                                    Post Now
+                                                </>
+                                            )}
                                         </Button>
 
                                         <div className="flex gap-2">
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={date}
-                                                        onSelect={setDate}
-                                                        initialFocus
+                                            <div className="flex flex-col gap-2 w-full">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0">
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={date}
+                                                            onSelect={setDate}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        type="time"
+                                                        value={time}
+                                                        onChange={(e) => setTime(e.target.value)}
+                                                        className="w-1/3"
                                                     />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <Button variant="secondary" onClick={handleSchedule} disabled={!date}>
-                                                Schedule
-                                            </Button>
+                                                    <Button 
+                                                        variant="secondary" 
+                                                        className="flex-1"
+                                                        onClick={handleSchedule} 
+                                                        disabled={!date || isScheduling}
+                                                    >
+                                                        {isScheduling ? (
+                                                            <>
+                                                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                                                Scheduling...
+                                                            </>
+                                                        ) : (
+                                                            "Schedule Post"
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

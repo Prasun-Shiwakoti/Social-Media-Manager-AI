@@ -6,16 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Users, Heart, MessageCircle, Share2, Eye, Bookmark, Loader2, AlertCircle } from "lucide-react";
 
-const StatCard = ({ icon: Icon, label, value, color }) => (
-    <Card>
-        <CardContent className="p-5 flex items-center gap-4">
-            <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${color}`}>
-                <Icon className="h-6 w-6 text-white" />
+const StatCard = ({ icon: Icon, label, value, color, description }) => (
+    <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm group">
+        <CardContent className="p-0">
+            <div className="p-5 flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${color} shadow-lg shadow-${color.split('-')[1]}-500/20`}>
+                    <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">{label}</p>
+                    <div className="flex items-baseline gap-1">
+                        <p className="text-2xl font-bold tracking-tight">{value ?? "0"}</p>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="text-2xl font-bold">{value ?? "—"}</p>
-            </div>
+            {description && (
+                <div className="px-5 py-2 bg-muted/30 border-t border-muted/20 text-[10px] text-muted-foreground">
+                    {description}
+                </div>
+            )}
         </CardContent>
     </Card>
 );
@@ -78,6 +87,9 @@ export default function Analytics() {
     // Build daily chart data from insight values (follower_count, reach, etc.)
     const buildChartData = (key) => {
         const vals = insights?.[key] || [];
+        if (vals.length === 0 && key === 'follower_count' && profile?.followers_count !== undefined) {
+            return [{ name: "Current", value: profile.followers_count }];
+        }
         return vals.map((v) => ({
             name: v.end_time ? new Date(v.end_time).toLocaleDateString('en-US', { weekday: 'short' }) : "—",
             value: v.value ?? 0,
@@ -95,17 +107,34 @@ export default function Analytics() {
         const metricKeys = ['likes', 'comments', 'shares'];
         const dateMap = {};
 
+        // 1. Try to use user-level insights (if and only if they have time-series dates)
+        let hasInsightHistorical = false;
         metricKeys.forEach((key) => {
             (insights?.[key] || []).forEach((v) => {
-                const label = v.end_time
-                    ? new Date(v.end_time).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-                    : 'Unknown';
-                if (!dateMap[label]) dateMap[label] = { name: label, likes: 0, comments: 0, shares: 0 };
+                if (!v.end_time) return;
+                const dateObj = new Date(v.end_time);
+                const label = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                if (!dateMap[label]) dateMap[label] = { name: label, likes: 0, comments: 0, shares: 0, timestamp: dateObj };
                 dateMap[label][key] = v.value ?? 0;
+                hasInsightHistorical = true;
             });
         });
 
-        return Object.values(dateMap).slice(-7); // last 7 days
+        // 2. Fallback: Aggregate from individual posts if insights are blank or not time-series
+        if (!hasInsightHistorical && posts.length > 0) {
+            posts.forEach(post => {
+                const dateObj = new Date(post.timestamp);
+                const label = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                if (!dateMap[label]) dateMap[label] = { name: label, likes: 0, comments: 0, shares: 0, timestamp: dateObj };
+                dateMap[label].likes += (post.like_count ?? 0);
+                dateMap[label].comments += (post.comments_count ?? 0);
+            });
+        }
+
+        // Sort by timestamp and take last 7 days
+        return Object.values(dateMap)
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .slice(-7);
     })();
 
     // Build reach+profile_views chart with merged dates
@@ -139,13 +168,18 @@ export default function Analytics() {
     );
 
     // Use real-time profile counts for stat cards (most accurate)
-    const statFollowers = profile?.followers_count ?? latestVal("follower_count");
-    const statMediaCount = profile?.media_count ?? null;
-    const statReach = latestVal("reach");
-    const statLikes = latestVal("likes");
-    const statComments = latestVal("comments");
-    const statShares = latestVal("shares");
-    const statSaves = latestVal("saves");
+    const statFollowers = profile?.followers_count ?? latestVal("follower_count") ?? 0;
+    const statMediaCount = profile?.media_count ?? 0;
+    
+    // Aggregation from posts for more accurate engagement
+    const totalLikesFromPosts = posts.reduce((sum, post) => sum + (post.like_count ?? 0), 0);
+    const totalCommentsFromPosts = posts.reduce((sum, post) => sum + (post.comments_count ?? 0), 0);
+
+    const statReach = latestVal("reach") ?? 0;
+    const statLikes = latestVal("likes") ?? totalLikesFromPosts;
+    const statComments = latestVal("comments") ?? totalCommentsFromPosts;
+    const statShares = latestVal("shares") ?? 0;
+    const statSaves = latestVal("saves") ?? 0;
 
     return (
         <div className="space-y-8">
@@ -155,13 +189,13 @@ export default function Analytics() {
             </div>
 
             {/* Stat Cards */}
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-                <StatCard icon={Users} label="Followers" value={statFollowers} color="bg-blue-500" />
-                <StatCard icon={Eye} label="Posts" value={statMediaCount} color="bg-violet-500" />
-                <StatCard icon={Eye} label="Reach" value={statReach} color="bg-indigo-500" />
-                <StatCard icon={Heart} label="Likes" value={statLikes} color="bg-rose-500" />
-                <StatCard icon={MessageCircle} label="Comments" value={statComments} color="bg-amber-500" />
-                <StatCard icon={Bookmark} label="Saves" value={statSaves} color="bg-teal-500" />
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <StatCard icon={Users} label="Followers" value={statFollowers} color="bg-gradient-to-br from-blue-500 to-blue-600" description="Total audience size" />
+                <StatCard icon={Eye} label="Posts" value={statMediaCount} color="bg-gradient-to-br from-violet-500 to-violet-600" description="Content items" />
+                <StatCard icon={Share2} label="Reach" value={statReach} color="bg-gradient-to-br from-indigo-500 to-indigo-600" description="Unique accounts reached" />
+                <StatCard icon={Heart} label="Likes" value={statLikes} color="bg-gradient-to-br from-rose-500 to-rose-600" description="From recent posts" />
+                <StatCard icon={MessageCircle} label="Comments" value={statComments} color="bg-gradient-to-br from-amber-500 to-amber-600" description="Engagements" />
+                <StatCard icon={Bookmark} label="Saves" value={statSaves} color="bg-gradient-to-br from-teal-500 to-teal-600" description="Saved content" />
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4">
@@ -171,7 +205,29 @@ export default function Analytics() {
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-6">
-                    <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="grid gap-6 lg:grid-cols-2">                        {/* Reach */}
+                        <Card className="lg:col-span-2">
+                            <CardHeader>
+                                <CardTitle>Reach & Profile Views</CardTitle>
+                                <CardDescription>How many unique accounts your content reached each day.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[240px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={reachData}>
+                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                            <XAxis dataKey="name" className="text-xs" />
+                                            <YAxis className="text-xs" />
+                                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }} />
+                                            <Legend />
+                                            <Line type="monotone" dataKey="reach" name="Reach" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                                            <Line type="monotone" dataKey="profile_views" name="Profile Views" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+
                         {/* Follower Growth */}
                         <Card>
                             <CardHeader>
@@ -217,28 +273,6 @@ export default function Analytics() {
                             </CardContent>
                         </Card>
 
-                        {/* Reach */}
-                        <Card className="lg:col-span-2">
-                            <CardHeader>
-                                <CardTitle>Reach &amp; Profile Views</CardTitle>
-                                <CardDescription>How many unique accounts your content reached each day.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="h-[240px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={reachData}>
-                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                            <XAxis dataKey="name" className="text-xs" />
-                                            <YAxis className="text-xs" />
-                                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }} />
-                                            <Legend />
-                                            <Line type="monotone" dataKey="reach" name="Reach" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-                                            <Line type="monotone" dataKey="profile_views" name="Profile Views" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
                 </TabsContent>
 
