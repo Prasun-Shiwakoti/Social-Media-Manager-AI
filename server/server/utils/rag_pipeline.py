@@ -17,7 +17,7 @@ from .utility_functions import (
     logger,
 )
 
-# from nepali_translate import compile_raw_to_english
+from nepali_translate import compile_raw_to_english
 
 class BusinessRAGPipeline:
     def __init__(self, verbose: bool = False):
@@ -162,7 +162,7 @@ class BusinessRAGPipeline:
             return settings.FALLBACK_MESSAGE
         
     def answer(self, business_id: str, query: str) -> str:
-        # query = compile_raw_to_english(query)
+        query = compile_raw_to_english(query)
         try:
             retrieved_docs = self.retrieve(business_id, query)
             if not retrieved_docs:
