@@ -75,11 +75,7 @@ class IGBusinessAccountSerializer(serializers.ModelSerializer):
         # Trigger background ingestion of business description into RAG
         try:
             if getattr(instance, "business_account_id", None):
-                threading.Thread(
-                    target=rag_pipeline.ingest_business,
-                    args=(str(instance.business_account_id), instance.description, False),
-                    daemon=True,
-                ).start()
+                rag_pipeline.ingest_business(str(instance.business_account_id), instance.description, False)
                 logger.info(f"Triggered RAG ingest for business {instance.business_account_id} on create")
         except Exception as e:
             logger.error(f"Failed to trigger RAG ingest on create: {e}")
@@ -104,11 +100,7 @@ class IGBusinessAccountSerializer(serializers.ModelSerializer):
         try:
             business_id = getattr(instance, "business_account_id", None)
             if business_id:
-                threading.Thread(
-                    target=rag_pipeline.ingest_business,
-                    args=(str(business_id), instance.description, False),
-                    daemon=True,
-                ).start()
+                rag_pipeline.ingest_business(str(business_id), instance.description, False)
                 logger.info(f"Triggered RAG ingest for business {business_id} on update")
         except Exception as e:
             logger.error(f"Failed to trigger RAG ingest on update: {e}")

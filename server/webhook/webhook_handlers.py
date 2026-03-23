@@ -18,17 +18,24 @@ def handle_message_webhook(payload):
         timestamp = payload['entry'][0]['messaging'][0]['timestamp']
         is_echo = payload['entry'][0]['messaging'][0]['message'].get('is_echo', False)
 
+        print("\n\n\n")
+        print(sender, recepient, message, timestamp, is_echo)
+
         if not is_echo:
             sender_username = fetch_others_accounts(COMMON_API_TOKEN, sender).get('username', '')
             recepient_data = fetch_others_accounts(COMMON_API_TOKEN, recepient)
             
+            print(f"\nFetched sender username: {sender_username} for sender ID: {sender}")
+            print(f"\nFetched recepient data: {recepient_data}")
             recepient_username = recepient_data.get('username', '')
             receipient_id = recepient_data.get('id', '')
+
+            print(f"\nSender username: {sender_username}, Recepient username: {recepient_username}")
 
             logger.info(f"Received message from {sender_username} to {recepient_username}: {message}")
 
             recepient_account = IGBusinessAccount.objects.filter(business_account_id=receipient_id).first()
-
+            print(f"\nQueried IGBusinessAccount for recepient ID: {receipient_id}, found: {recepient_account}")
             if recepient_account and recepient_account.auto_reply_enabled:
                 
                 recepient_access_token = recepient_account.access_token.access_token
