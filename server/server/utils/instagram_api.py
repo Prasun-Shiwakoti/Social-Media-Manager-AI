@@ -164,7 +164,7 @@ def fetch_long_lived_token(code: str, api_version: str = API_VERSION) -> str:
 def fetch_all_posts(business_account_id: str, access_token: str, api_version: str = API_VERSION):
     url = f'{HOST_URL}{api_version}/{business_account_id}/media'
     params = {
-        'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp',
+        'fields': 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count',
         'access_token': access_token
     }
 
