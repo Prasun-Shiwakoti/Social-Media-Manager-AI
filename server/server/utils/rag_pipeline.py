@@ -17,7 +17,7 @@ from .utility_functions import (
     logger,
 )
 
-from nepali_translate import compile_raw_to_english
+from .nepali_translate import compile_raw_to_english
 
 class BusinessRAGPipeline:
     def __init__(self, verbose: bool = False):
