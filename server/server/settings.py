@@ -49,7 +49,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
 
 PUBLIC_URL = os.getenv("PUBLIC_URL", default="http://localhost:8000")
-
 WEBHOOK_VERIFY_TOKEN = os.getenv("WEBHOOK_VERIFY_TOKEN")
 MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT", default="http://localhost:11434")
 

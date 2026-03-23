@@ -6,16 +6,7 @@ from account.models import IGBusinessAccount
 from dashboard.tasks import schedule_post
 from server.utils.instagram_api import create_and_publish_post
 from server.utils.logger import logger
-import time
-
-def delayed_publish(absolute_url, caption, access_token, business_account_id, post_id, scheduled_time):
-    wait_time = (scheduled_time - timezone.now()).total_seconds()
-    if wait_time > 0:
-        time.sleep(wait_time)
-    
-    # Call the task synchronously
-    schedule_post(absolute_url, caption, access_token, business_account_id, post_id)
-
+from django.conf import settings
 
 
 # Create your models here.
@@ -47,7 +38,8 @@ class InstagramPost(models.Model):
         if self.media and not self.is_posted:
             if self.media.image:
                 absolute_url = request.build_absolute_uri(self.media.image.url)
-                # absolute_url = settings.PUBLIC_URL + self.media.image.url
+                absolute_url = settings.PUBLIC_URL + self.media.image.url
+                # print("Absolute URL:", absolute_url)
             else:
                 absolute_url = self.media.image_url
 

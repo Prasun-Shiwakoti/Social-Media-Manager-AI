@@ -150,6 +150,7 @@ def publish_post(request):
         scheduled_time = request.data.get('scheduled_time', None) # ISO format string, e.g. "2024-12-31T23:59:00Z"
         scheduled_time = datetime.fromisoformat(scheduled_time) if scheduled_time else None
         print("Before converting to UTC:", scheduled_time)
+        print(image)
         #convert from local to utc
         if scheduled_time:
             scheduled_time = scheduled_time.astimezone(pytz.UTC)
