@@ -4,7 +4,7 @@ import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
-import { Users, Heart, MessageCircle, Share2, Eye, Bookmark, Loader2, AlertCircle } from "lucide-react";
+import { Users, Heart, MessageCircle, Share2, Eye, Bookmark, Loader2, AlertCircle, Image as ImageIcon } from "lucide-react";
 
 const StatCard = ({ icon: Icon, label, value, color, description }) => (
     <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm group">
@@ -170,7 +170,7 @@ export default function Analytics() {
     // Use real-time profile counts for stat cards (most accurate)
     const statFollowers = profile?.followers_count ?? latestVal("follower_count") ?? 0;
     const statMediaCount = profile?.media_count ?? 0;
-    
+
     // Aggregation from posts for more accurate engagement
     const totalLikesFromPosts = posts.reduce((sum, post) => sum + (post.like_count ?? 0), 0);
     const totalCommentsFromPosts = posts.reduce((sum, post) => sum + (post.comments_count ?? 0), 0);
@@ -191,8 +191,8 @@ export default function Analytics() {
             {/* Stat Cards */}
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <StatCard icon={Users} label="Followers" value={statFollowers} color="bg-gradient-to-br from-blue-500 to-blue-600" description="Total audience size" />
-                <StatCard icon={Eye} label="Posts" value={statMediaCount} color="bg-gradient-to-br from-violet-500 to-violet-600" description="Content items" />
-                <StatCard icon={Share2} label="Reach" value={statReach} color="bg-gradient-to-br from-indigo-500 to-indigo-600" description="Unique accounts reached" />
+                <StatCard icon={ImageIcon} label="Posts" value={statMediaCount} color="bg-gradient-to-br from-violet-500 to-violet-600" description="Content items" />
+                <StatCard icon={Eye} label="Reach" value={statReach} color="bg-gradient-to-br from-indigo-500 to-indigo-600" description="Unique accounts reached" />
                 <StatCard icon={Heart} label="Likes" value={statLikes} color="bg-gradient-to-br from-rose-500 to-rose-600" description="From recent posts" />
                 <StatCard icon={MessageCircle} label="Comments" value={statComments} color="bg-gradient-to-br from-amber-500 to-amber-600" description="Engagements" />
                 <StatCard icon={Bookmark} label="Saves" value={statSaves} color="bg-gradient-to-br from-teal-500 to-teal-600" description="Saved content" />

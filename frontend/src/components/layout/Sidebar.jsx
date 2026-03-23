@@ -23,7 +23,7 @@ const sidebarItems = [
     { icon: MessageSquare, label: "Comments", path: "/comments" },
     { icon: TrendingUp, label: "Sentiment Analysis", path: "/sentiment-analysis" },
     { icon: Mail, label: "DM Assistant", path: "/dms" },
-    { icon: Zap, label: "Insights", path: "/insights" },
+    // { icon: Zap, label: "Insights", path: "/insights" },
 ];
 
 export function Sidebar() {
