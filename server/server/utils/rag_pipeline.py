@@ -11,6 +11,8 @@ from huggingface_hub import InferenceClient
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from dashboard.models import IGBusinessAccount
+
 from .utility_functions import (
     check_embedding_exist,
     hash_text,
@@ -163,13 +165,19 @@ class BusinessRAGPipeline:
         
     def answer(self, business_id: str, query: str) -> str:
         query = compile_raw_to_english(query)
+        err=0
         try:
             retrieved_docs = self.retrieve(business_id, query)
             if not retrieved_docs:
+                err = 1
                 logger.info("No relevant documents found. Returning fallback message.")
-                return settings.FALLBACK_MESSAGE
+                business_acc = IGBusinessAccount.objects.filter(business_account_id=business_id).first()
+                rag_pipeline.ingest_business(str(business_id), business_acc.description, True)
+
+                return self.answer(business_id, query) if err == 1 else settings.FALLBACK_MESSAGE
             
             return self.generate_answer(query, retrieved_docs)
+        
 
         except Exception as e:
             logger.error(f"Error in answer pipeline: {e}")
