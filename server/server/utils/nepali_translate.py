@@ -181,7 +181,7 @@ def is_probably_english(word: str) -> bool:
         return False
 
     # keep common short English words
-    if w in {"i","a","an","the","and","or","but","to","in","on","of","is","am","are","was","were","be"}:
+    if w in {"i","a","an","the","and","or","but","to","in","on","of","is","am","are","was","were","be", 'have','has','had','do','does','did', 'hi', 'hello', 'how are you', 'good morning', 'good night', 'bye'}:
         return True
 
     return zipf_frequency(w, "en") >= ENGLISH_ZIPF_THRESHOLD

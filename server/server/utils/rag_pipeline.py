@@ -8,6 +8,8 @@ import numpy as np
 from ollama import Client
 
 from huggingface_hub import InferenceClient
+from bytez import Bytez
+
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -24,8 +26,9 @@ from .nepali_translate import compile_raw_to_english
 class BusinessRAGPipeline:
     def __init__(self, verbose: bool = False):
         self.remote_client = Client(settings.MODEL_ENDPOINT)
-        self.generation_client = InferenceClient(api_key=settings.HF_KEY)
-        
+        bytez_sdk = Bytez(api_key=settings.BYTEZ_API_KEY)
+        self.generation_client = bytez_sdk.model(settings.LLM_MODEL)
+
         self.db = chromadb.PersistentClient(path=settings.BASE_CHROMA_PATH)
 
         self.embedding_model_name = settings.EMBEDDING_MODEL
@@ -147,14 +150,11 @@ class BusinessRAGPipeline:
                 {"role": "system", "content": self.system_instruction},
                 {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"}
             ]
-            response = self.generation_client.chat.completions.create(
-                model=self.llm_model_name,
-                messages=messages,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature
-            )
-            answer = response.choices[0].message['content'].strip()
+
+            response = self.generation_client.run(messages)
+            answer = response.output['content'].strip()
             logger.info(f"Generated answer: {answer[:30]}...")
+
             if self.verbose:
                 print(f"\tGenerated answer: answer: {answer}...")
             return answer
@@ -165,6 +165,8 @@ class BusinessRAGPipeline:
         
     def answer(self, business_id: str, query: str, retry_count: int = 0) -> str:
         query = compile_raw_to_english(query)
+
+        print("\n\n\nConverted query to English:", query)
         try:
             retrieved_docs = self.retrieve(business_id, query)
             if not retrieved_docs:

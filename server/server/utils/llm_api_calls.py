@@ -2,6 +2,10 @@ import os
 
 from huggingface_hub import InferenceClient
 from PIL import Image
+from bytez import Bytez
+
+import base64
+from io import BytesIO
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -11,11 +15,14 @@ load_dotenv()
 # 1. Setup clients
 # -------------------------------------------------------------------
 HF_KEY = os.getenv("HF_API_KEY")
+BYTEZ_API_KEY = os.getenv("BYTEZ_API_KEY")
 print("HF_KEY:", HF_KEY)  # Debugging line to check if the key is loaded correctly
+print("BYTEZ_API_KEY:", BYTEZ_API_KEY)  # Debugging line to check if the key is loaded correctly
 # Initialize inference client (used for all API calls)
-inference_client = InferenceClient(
+HF_inference_client = InferenceClient(
     api_key=HF_KEY,
 )
+Bytez_sdk = Bytez(BYTEZ_API_KEY)
 
 # -------------------------------------------------------------------
 # 2. Generate expanded prompt from user input
@@ -35,15 +42,18 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
     if expanded_prompt:
         messages[-1]["content"] += f"\nHowever dont make it somewhat like this : {expanded_prompt}. \nI need a better version of this."
 
+    # response = HF_inference_client.chat.completions.create(
+    #     model="meta-llama/Llama-3.3-70B-Instruct",
+    #     messages=messages,
+    #     max_tokens=300,
+    #     temperature=0.7
+    # )
 
-    response = inference_client.chat.completions.create(
-        model="meta-llama/Llama-3.3-70B-Instruct",
-        messages=messages,
-        max_tokens=300,
-        temperature=0.7
-    )
+    model = Bytez_sdk.model("openai/gpt-5.3-chat-latest")
+    results = model.run(messages)
 
-    return response.choices[0].message["content"].strip()
+
+    return results.output['content'].strip()
 
 
 
@@ -52,46 +62,51 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
 # -------------------------------------------------------------------
 def generate_image(expanded_prompt: str) -> Image.Image:
 
-    client = InferenceClient(
-        provider="replicate",
-        api_key=HF_KEY,
-    )
+    # choose imagen-4.0-ultra-generate-001
+    model = Bytez_sdk.model("google/imagen-4.0-ultra-generate-001")
 
-    img = client.text_to_image(
-        prompt=expanded_prompt,
-        model="black-forest-labs/FLUX.1-dev",
-        num_inference_steps=30
-    )
-    return img
+    # send input to model
+    results = model.run(expanded_prompt)
+
+    base64_img = results.provider['generatedImages'][0]['image']['imageBytes']
+    image_data = base64.b64decode(base64_img)
+    image = Image.open(BytesIO(image_data))
+
+    return image
 
 
 # -------------------------------------------------------------------
 # 4. Generate Instagram caption
 # -------------------------------------------------------------------
-def generate_caption(expanded_prompt: str, old_caption=None) -> str:
+def generate_caption(expanded_prompt: str, short_prompt: str, old_caption=None) -> str:
     messages = [
         {
             "role": "system",
             "content": (
-                "Write a short, engaging Instagram caption (1-2 sentences)."
+                "Write a short, engaging Instagram caption (1-2 sentences). You will be provided with a short user prompt, and an expanded image description based on that prompt. Use the expanded image description and the user prompt to craft a caption that complements the visual content and meets user's requriements. The caption should be catchy, relevant to the image, and encourage engagement (likes, comments). Avoid using hashtags or emojis. Focus on making the caption informative and intriguing to entice viewers to interact with the post."
             ),
         },
         {
             "role": "user",
-            "content": f"Write a caption for this image description: {expanded_prompt}"
+            "content": f"Write a caption for this user's prompt: {short_prompt} and its image description: {expanded_prompt}"
         }
     ]
     if old_caption:
         messages[-1]["content"] += f"\nHowever dont make it somewhat like this : {old_caption}. \nI need a better version of this."
 
-    response = inference_client.chat.completions.create(
-        model="meta-llama/Llama-3.3-70B-Instruct",
-        messages=messages,
-        max_tokens=120,
-        temperature=0.8
-    )
+    # response = HF_inference_client.chat.completions.create(
+    #     model="meta-llama/Llama-3.3-70B-Instruct",
+    #     messages=messages,
+    #     max_tokens=120,
+    #     temperature=0.8
+    # )
 
-    return response.choices[0].message["content"].strip()
+    model = Bytez_sdk.model("openai/gpt-5.3-chat-latest")
+    results = model.run(messages)
+
+    return results.output['content'].strip()
+
+
 
 
 if __name__ == "__main__":
@@ -105,5 +120,5 @@ if __name__ == "__main__":
     # img = generate_image(expanded)
     # img.show()
 
-    # caption = generate_caption(expanded)
+    # caption = generate_caption(expanded, short_prompt)
     # print("\n\nGenerated Caption:", caption)

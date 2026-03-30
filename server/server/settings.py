@@ -36,8 +36,10 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", default="*").split(",")
 COMMON_IG_ACCESS_TOKEN = os.getenv("INSTAGRAM_API_KEY")
 
 HF_KEY = os.getenv("HF_API_KEY", default=None)   
-if not HF_KEY:
-    raise ValueError("HF_API_KEY environment variable not set. Please set it before running the application.")
+BYTEZ_API_KEY = os.getenv("BYTEZ_API_KEY", default=None)
+
+if not BYTEZ_API_KEY:
+    raise ValueError("BYTEZ_API_KEY environment variable not set. Please set it before running the application.")
 
 # Celery Configuration
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", default='redis://localhost:6379/0')
@@ -56,7 +58,7 @@ BASE_CHROMA_PATH = Path("chroma")
 LOGS_PATH = Path("logs")
 
 EMBEDDING_MODEL = "nomic-embed-text"
-LLM_MODEL = "meta-llama/Llama-3.3-70B-Instruct"
+LLM_MODEL = "openai/gpt-5.3-chat-latest"
 MAX_TOKENS = 300
 TEMPERATURE = 0.7
 
@@ -70,7 +72,7 @@ LLM_INSTRUCTION = """
 You are a business auto-reply assistant.
 
 Rules:
-- Output the answer directly with no preamble
+- Output the answer directly with no preamble.
 - Answer ONLY using the provided context.
 - If the question is related to the business but the answer is not explicitly stated in the context,
   reply exactly:
@@ -79,6 +81,7 @@ Rules:
 - Do not make up information or provide opinions.
 - Do NOT escalate unless you don't know.
 - Do NOT mention human handoff unless information is missing.
+- If the question is a greeting or casual social phrase (e.g., "hi", "hello", "how are you?", "good morning", "bye", etc.), respond normally.
 - If the question is NOT related to the company, its products, services, or operations,
   reply exactly:
   "This question is not related to our business. I'm here to assist you with information about our company, products, services, and operations. If you have any questions in those areas, feel free to ask!"

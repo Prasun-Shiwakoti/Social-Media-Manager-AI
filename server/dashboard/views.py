@@ -43,7 +43,7 @@ def generate_post_assets(user_short_prompt: str):
     print("Image generated.")
 
     print("\nGenerating caption...")
-    caption = generate_caption_ai(expanded_prompt)
+    caption = generate_caption_ai(expanded_prompt, user_short_prompt)
     print("Caption generated:", caption)
 
     return expanded_prompt, caption, image
@@ -74,11 +74,13 @@ def fetch_user_instagram_profile(request) -> Response:
 @permission_classes([IsAuthenticated])
 def generate_caption(request) -> Response:
     """Generate a caption using LLM based on the short prompt."""
+
+    print(request.data)
     try:
         short_prompt = request.data.get('short_prompt', '')
         expanded_prompt = request.data.get('expanded_prompt', None)
 
-        caption = generate_caption_ai(expanded_prompt, old_caption=short_prompt)
+        caption = generate_caption_ai(expanded_prompt, short_prompt, old_caption=short_prompt)
 
         return Response({"caption": caption})
     except Exception as e:
