@@ -71,7 +71,7 @@ export default function AICreator() {
         try {
             const formData = new FormData();
             formData.append("caption", caption);
-            formData.append("image_url", "https://yuonne-unrotary-jedidiah.ngrok-free.dev/" + generatedImages[0]);
+            formData.append("image_url", "https://ectodermal-blondell-unmarred.ngrok-free.dev/" + generatedImages[0]);
 
             const res = await axios.post("/api/dashboard/publish_post/", formData, {
                 headers: {

@@ -49,6 +49,8 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
     #     temperature=0.7
     # )
 
+    # return response.choices[0].message["content"].strip()
+
     model = Bytez_sdk.model("openai/gpt-5.3-chat-latest")
     results = model.run(messages)
 
@@ -61,6 +63,18 @@ def expand_prompt(short_prompt: str, expanded_prompt=None):
 # 3. Generate image from expanded prompt
 # -------------------------------------------------------------------
 def generate_image(expanded_prompt: str) -> Image.Image:
+
+    # client = InferenceClient(
+    #     provider="replicate",
+    #     api_key=HF_KEY,
+    # )
+
+    # img = client.text_to_image(
+    #     prompt=expanded_prompt,
+    #     model="black-forest-labs/FLUX.1-dev",
+    #     num_inference_steps=30
+    # )
+    # return img
 
     # choose imagen-4.0-ultra-generate-001
     model = Bytez_sdk.model("google/imagen-4.0-ultra-generate-001")
@@ -94,12 +108,14 @@ def generate_caption(expanded_prompt: str, short_prompt: str, old_caption=None) 
     if old_caption:
         messages[-1]["content"] += f"\nHowever dont make it somewhat like this : {old_caption}. \nI need a better version of this."
 
-    # response = HF_inference_client.chat.completions.create(
+    # response = inference_client.chat.completions.create(
     #     model="meta-llama/Llama-3.3-70B-Instruct",
     #     messages=messages,
     #     max_tokens=120,
     #     temperature=0.8
     # )
+
+    # return response.choices[0].message["content"].strip()
 
     model = Bytez_sdk.model("openai/gpt-5.3-chat-latest")
     results = model.run(messages)

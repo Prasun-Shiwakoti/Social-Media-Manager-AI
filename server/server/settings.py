@@ -57,42 +57,51 @@ MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT", default="http://localhost:11434")
 BASE_CHROMA_PATH = Path("chroma")
 LOGS_PATH = Path("logs")
 
-EMBEDDING_MODEL = "nomic-embed-text"
-LLM_MODEL = "openai/gpt-5.3-chat-latest"
-MAX_TOKENS = 300
-TEMPERATURE = 0.7
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", default="nomic-embed-text")
+LLM_MODEL = os.getenv("LLM_MODEL", default="openai/gpt-5.3-chat-latest")
+IMAGE_MODEL = os.getenv("IMAGE_MODEL", default="google/imagen-4.0-ultra-generate-001")
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", default=300))
+TEMPERATURE = float(os.getenv("TEMPERATURE", default=0.7))
 
-CHUNK_SIZE = 200
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", default=200))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", default=50))
 
-TOP_K = 5
-DISTANCE_THRESHOLD = 10
+TOP_K = int(os.getenv("TOP_K", default=5))
+DISTANCE_THRESHOLD = int(os.getenv("DISTANCE_THRESHOLD", default=10))
 
-LLM_INSTRUCTION = """
-You are a business auto-reply assistant.
+LLM_INSTRUCTION = os.getenv("DM_RESPONSE_LLM_INSTRUCTION", default=None)
+if not LLM_INSTRUCTION:
+    LLM_INSTRUCTION = """
+    You are a business auto-reply assistant.
 
-Rules:
-- Output the answer directly with no preamble.
-- Answer ONLY using the provided context.
-- If the question is related to the business but the answer is not explicitly stated in the context,
-  reply exactly:
-  "I currently don't have enough information on your query, let me get you connected with our team."
-- Keep replies short, clear, and polite.
-- Do not make up information or provide opinions.
-- Do NOT escalate unless you don't know.
-- Do NOT mention human handoff unless information is missing.
-- If the question is a greeting or casual social phrase (e.g., "hi", "hello", "how are you?", "good morning", "bye", etc.), respond normally.
-- If the question is NOT related to the company, its products, services, or operations,
-  reply exactly:
-  "This question is not related to our business. I'm here to assist you with information about our company, products, services, and operations. If you have any questions in those areas, feel free to ask!"
-"""
+    Rules:
+    - Output the answer directly with no preamble.
+    - Answer ONLY using the provided context.
+    - If the question is related to the business but the answer is not explicitly stated in the context,
+    reply exactly:
+    "I currently don't have enough information on your query, let me get you connected with our team."
+    - Keep replies short, clear, and polite.
+    - Do not make up information or provide opinions.
+    - Do NOT escalate unless you don't know.
+    - Do NOT mention human handoff unless information is missing.
+    - If the question is a greeting or casual social phrase (e.g., "hi", "hello", "how are you?", "good morning", "bye", etc.), respond normally.
+    - If the question is NOT related to the company, its products, services, or operations,
+    reply exactly:
+    "This question is not related to our business. I'm here to assist you with information about our company, products, services, and operations. If you have any questions in those areas, feel free to ask!"
+    """
+else:
+    # Replace escaped newlines with actual newlines
+    LLM_INSTRUCTION = LLM_INSTRUCTION.replace("\\n", "\n")
 
-# Load API key from environment variable
 
-FALLBACK_MESSAGE = (
-    "Thanks for your message! "
-    "Let me connect you with our team for further assistance."
-)
+FALLBACK_MESSAGE= os.getenv("FALLBACK_MESSAGE", default=None)
+if not FALLBACK_MESSAGE:
+    FALLBACK_MESSAGE = (
+        "Thanks for your message! "
+        "Let me connect you with our team for further assistance."
+    )
+else:
+    FALLBACK_MESSAGE = FALLBACK_MESSAGE.split(";") 
 
 # Application definition
 
@@ -183,8 +192,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=120),
+    "ACCESS_TOKEN_LIFETIME": timedelta(seconds=int(os.getenv("ACCESS_TOKEN_LIFETIME"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(seconds=int(os.getenv("REFRESH_TOKEN_LIFETIME"))),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }

@@ -1,5 +1,7 @@
 # Models
 *.keras
+artifacts/
+embeddings/
 
 #embeddings
 sentiment_analysis_model/embeddings/
