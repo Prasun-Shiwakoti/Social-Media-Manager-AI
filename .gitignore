@@ -1,0 +1,11 @@
+# Models
+*.keras
+
+#embeddings
+sentiment_analysis_model/embeddings/
+
+#artifacts
+sentiment_analysis_model/artifacts/
+
+#data
+sentiment_analysis_model/data/
