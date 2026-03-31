@@ -11,12 +11,12 @@ from .nepali_translate import compile_raw_to_english
 
 # Paths (relative to this file)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODEL_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "cnn_bilstm_glove_finetuned_b.keras")
-TOKENIZER_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "tokenizer_b.pkl")
+MODEL_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "sentiment_model.keras")
+TOKENIZER_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "tokenizer.pkl")
 
 # Model configuration (must match training settings)
 MAX_LEN = 100
-VOCAB_SIZE = 30000
+VOCAB_SIZE = 20000
 
 # Label mapping: 0 = Negative, 1 = Positive, 2 = Neutral
 ID2LABEL = {
@@ -127,8 +127,10 @@ def preprocess_text_for_inference(text: str, tokenizer=None, max_len: int = MAX_
         _, tokenizer = load_model_and_tokenizer()
     
     # translate raw text to english
-    text = compile_raw_to_english(text)
-
+    try:
+        text = compile_raw_to_english(text)
+    except:
+        pass
 
     # Clean text
     cleaned = clean_text(text)
@@ -180,43 +182,17 @@ def predict_sentiment(
     if model is None or tokenizer is None:
         model, tokenizer = load_model_and_tokenizer()
 
-    predefined_answers = {
-        "i would be lying if i say the product was not good" : [0.412, 0.588],
-        "i would be lying if i say the product was good" : [0.622, 0.378],
-    }
-    
-    check_text = text.lower().strip()
-    check_text = re.sub(r"[^\w\s]", "", text.lower().strip())
-
-    if check_text in predefined_answers:
-        sleep(1)  # Simulate processing delay
-        probs = np.array(predefined_answers[check_text])
-
-        return {
-            "text": text,
-            "cleaned_text": clean_text(text),
-            "sentiment": ID2LABEL[int(np.argmax(probs))],
-            "confidence": round(float(np.max(probs)), 4),
-            "sentiment_scores": {
-                "Negative": round(float(probs[0]), 4),
-                "Positive": round(float(probs[1]), 4),
-            } if return_all_scores else {}
-        }
-
-
-
     # Preprocess text
     X = preprocess_text_for_inference(text, tokenizer)
     
-    
 
     # Get prediction probabilities
-    probs = model.predict(X, verbose=0)[0]  # Shape: (2,)
-    
+    pos_score = model.predict(X, verbose=0)[0][0]  # Shape: (1,)
+
     # Get predicted class
-    pred_id = int(np.argmax(probs))
+    pred_id = 1 if pos_score >= 0.5 else 0
     predicted_sentiment = ID2LABEL[pred_id]
-    confidence = float(probs[pred_id])
+    confidence = float(pos_score)
     
     # Build result
     result = {
@@ -229,8 +205,8 @@ def predict_sentiment(
     # Optionally include all class probabilities
     if return_all_scores:
         result["sentiment_scores"] = {
-            "Negative": round(float(probs[0]), 4),
-            "Positive": round(float(probs[1]), 4),
+            "Negative": round(float(1 - pos_score), 4),
+            "Positive": round(float(pos_score), 4),
         }
     
     return result
