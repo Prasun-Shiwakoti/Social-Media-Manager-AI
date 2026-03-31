@@ -2,6 +2,7 @@
 *.keras
 artifacts/
 embeddings/
+data/
 
 #embeddings
 sentiment_analysis_model/embeddings/
