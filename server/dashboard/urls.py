@@ -12,6 +12,7 @@ from dashboard.views import (
     get_instagram_post_insights,
     get_instagram_post_comments,
     get_sentiment_score,
+    get_sentiment_score_bulk,
     get_instagram_conversations,
     get_instagram_conversation_messages,
     reply_to_instagram_conversation,
@@ -46,6 +47,7 @@ urlpatterns = [
 
     # Sentiment Analysis API
     path('sentiment_analysis/', get_sentiment_score, name='get_sentiment_score'),
+    path('sentiment_analysis_bulk/', get_sentiment_score_bulk, name='get_sentiment_score_bulk'),
 
     
 ]

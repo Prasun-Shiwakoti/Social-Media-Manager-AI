@@ -32,7 +32,6 @@ def nllb_translate_nepali_deva_to_english(text: str) -> str:
     output = model.generate(
         **inputs,
         forced_bos_token_id=forced_bos_token_id,
-        max_new_tokens=256
     )
     return tokenizer.batch_decode(output, skip_special_tokens=True)[0]
 

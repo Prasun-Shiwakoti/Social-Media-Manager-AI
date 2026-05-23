@@ -15,18 +15,20 @@ MODEL_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "sentiment_mode
 TOKENIZER_PATH = os.path.join(BASE_DIR, "server", "utils", "models", "tokenizer.pkl")
 
 # Model configuration (must match training settings)
-MAX_LEN = 100
+MAX_LEN = 50
 VOCAB_SIZE = 20000
 
 # Label mapping: 0 = Negative, 1 = Positive, 2 = Neutral
 ID2LABEL = {
     0: "Negative",
     1: "Positive",
+    2: "Neutral"
 }
 
 LABEL2ID = {
     "Negative": 0,
     "Positive": 1,
+    "Neutral": 2
 }
 
 # Global model and tokenizer (lazy loaded)
@@ -181,18 +183,17 @@ def predict_sentiment(
     # Load artifacts if not provided
     if model is None or tokenizer is None:
         model, tokenizer = load_model_and_tokenizer()
-
+    print("Model loaded successfully for inference.")
     # Preprocess text
     X = preprocess_text_for_inference(text, tokenizer)
-    
+    print(f"Preprocessed text: {X}")
 
-    # Get prediction probabilities
-    pos_score = model.predict(X, verbose=0)[0][0]  # Shape: (1,)
-
-    # Get predicted class
-    pred_id = 1 if pos_score >= 0.5 else 0
+    # Get prediction probabilities for the three classes
+    probs = model.predict(X, verbose=0)[0]
+    print(f"Raw model output probabilities: {probs}")
+    pred_id = int(np.argmax(probs))
     predicted_sentiment = ID2LABEL[pred_id]
-    confidence = float(pos_score)
+    confidence = float(probs[pred_id])
     
     # Build result
     result = {
@@ -205,8 +206,9 @@ def predict_sentiment(
     # Optionally include all class probabilities
     if return_all_scores:
         result["sentiment_scores"] = {
-            "Negative": round(float(1 - pos_score), 4),
-            "Positive": round(float(pos_score), 4),
+            "Negative": round(float(probs[0]), 4),
+            "Positive": round(float(probs[1]), 4),
+            "Neutral": round(float(probs[2]), 4),
         }
     
     return result

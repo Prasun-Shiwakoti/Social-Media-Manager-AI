@@ -9,16 +9,19 @@ from account.models import IGBusinessAccount
 from .models import PostImage, InstagramPost 
 from server.utils.logger import logger
 from server.utils.llm_api_calls import expand_prompt, generate_image as generate_image_ai, generate_caption as generate_caption_ai
-from server.utils.sentiment_model import predict_sentiment as analyze_sentiment
+from server.utils.sentiment_model import predict_batch, predict_sentiment as analyze_sentiment
 import server.utils.instagram_api as insta_api
 
 
 from io import BytesIO
 from datetime import datetime
 from django.core.files.base import ContentFile
+from django.views.decorators.csrf import csrf_exempt
+
 
 
 @api_view(['POST'])
+@csrf_exempt
 def get_sentiment_score(request) -> Response:
     """API to get sentiment score for a given text."""
     try:
@@ -30,6 +33,21 @@ def get_sentiment_score(request) -> Response:
         return Response({"sentiment_score": score})
     except Exception as e:
         logger.error(f"Error analyzing sentiment: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+@api_view(['POST'])
+@csrf_exempt
+def get_sentiment_score_bulk(request) -> Response:
+    """API to get sentiment scores for a list of texts."""
+    try:
+        texts = request.data.get('texts', [])
+        if not isinstance(texts, list) or not texts:
+            return Response({"error": "A non-empty list of texts is required."}, status=400)
+        
+        scores = predict_batch(texts)
+        return Response({"sentiment_scores": scores})
+    except Exception as e:
+        logger.error(f"Error analyzing sentiment in bulk: {str(e)}")
         return Response({"error": str(e)}, status=500)
 
 
